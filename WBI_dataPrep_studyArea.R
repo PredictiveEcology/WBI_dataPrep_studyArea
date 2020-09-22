@@ -15,7 +15,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "WBI_dataPrep_studyArea.Rmd")),
-  reqdPkgs = list(),
+  reqdPkgs = list('magrittr', 'raster', 'sf', 'PredictiveEcology@LandR'),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
@@ -70,58 +70,10 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
       sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "WBI_dataPrep_studyArea", "save")
     },
     plot = {
-      # ! ----- EDIT BELOW ----- ! #
-      # do stuff for this event
 
-      #plotFun(sim) # uncomment this, replace with object to plot
-      # schedule future event(s)
-
-      # e.g.,
-      #sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "WBI_dataPrep_studyArea", "plot")
-
-      # ! ----- STOP EDITING ----- ! #
     },
     save = {
-      # ! ----- EDIT BELOW ----- ! #
-      # do stuff for this event
 
-      # e.g., call your custom functions/methods here
-      # you can define your own methods below this `doEvent` function
-
-      # schedule future event(s)
-
-      # e.g.,
-      # sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "WBI_dataPrep_studyArea", "save")
-
-      # ! ----- STOP EDITING ----- ! #
-    },
-    event1 = {
-      # ! ----- EDIT BELOW ----- ! #
-      # do stuff for this event
-
-      # e.g., call your custom functions/methods here
-      # you can define your own methods below this `doEvent` function
-
-      # schedule future event(s)
-
-      # e.g.,
-      # sim <- scheduleEvent(sim, time(sim) + increment, "WBI_dataPrep_studyArea", "templateEvent")
-
-      # ! ----- STOP EDITING ----- ! #
-    },
-    event2 = {
-      # ! ----- EDIT BELOW ----- ! #
-      # do stuff for this event
-
-      # e.g., call your custom functions/methods here
-      # you can define your own methods below this `doEvent` function
-
-      # schedule future event(s)
-
-      # e.g.,
-      # sim <- scheduleEvent(sim, time(sim) + increment, "WBI_dataPrep_studyArea", "templateEvent")
-
-      # ! ----- STOP EDITING ----- ! #
     },
     warning(paste("Undefined event type: \'", current(sim)[1, "eventType", with = FALSE],
                   "\' in module \'", current(sim)[1, "moduleName", with = FALSE], "\'", sep = ""))
@@ -134,9 +86,52 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
 
 ### template initialization
 Init <- function(sim) {
-  # # ! ----- EDIT BELOW ----- ! #
 
-  # ! ----- STOP EDITING ----- ! #
+  dPath <- file.path("data")
+
+  if (P(sim)$studyAreaName == 'RIA') {
+
+    #studyArea = 5 TSAs for now - not sure we need em all, they aren't all boreal
+    #TSAs 08 and 41 are not harvested nearly as much as 8 and 16, and to a lesser extent, 40
+    studyAreaUrl <- 'https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/view?usp=sharing'
+    studyAreaFun <- function(x) {
+      sf::st_as_sf(.) %>%
+        .[.$TSA_NUMBER %in% c('40', '08', '41', '24', '16'),] %>%
+        sf::as_Spatial(.)
+    }
+    #originally, I thought this could be defined after the IF clause as Eliot suggested. But if RIA SA = SAL, or RTM = RTML, it falls apart
+    sim$studyArea <- prepInputs(url = studyAreaUrl, fun = studyAreaFun, destinationPath = dPath)
+    sim$rasterToMatch <- prepInputsLCC(studyArea = studyArea, destinationPath = dPath, filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
+    sim$rasterToMatchLarge <- sim$rasterToMatch
+    sim$rasterToMatchLarge = siM$rasterToMatch
+
+    #get species objects - putting this in a script as it might be long with 7 study Areas
+    sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName)
+
+    #get climate objects - projectedMDC and historicalMDC
+    projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
+    historicalClimateUrl <- 'https://drive.google.com/file/d/1DtB2_Gftl4R7T4yM9-mjVCCXF5nBXKqD/view?usp=sharing'
+
+  } else {
+    stop("no other study areas at the moment :( ")
+  }
+
+  sim$historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
+                                             destinationPath = dPath,
+                                             fun = 'rasterStack'
+                                             useCache = TRUE,
+                                             overwrite = TRUE,
+                                             userTags = c("histMDC"))
+
+  sim$projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
+                                            destinationPath = dPath,
+                                            fun = 'rasterStack'
+                                            useCache = TRUE,
+                                            overwrite = TRUE,
+                                            userTags = c("projMDC"))
+
+
+
 
   return(invisible(sim))
 }
@@ -161,42 +156,7 @@ plotFun <- function(sim) {
   return(invisible(sim))
 }
 
-### template for your event1
-Event1 <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # THE NEXT TWO LINES ARE FOR DUMMY UNIT TESTS; CHANGE OR DELETE THEM.
-  # sim$event1Test1 <- " this is test for event 1. " # for dummy unit test
-  # sim$event1Test2 <- 999 # for dummy unit test
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-### template for your event2
-Event2 <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # THE NEXT TWO LINES ARE FOR DUMMY UNIT TESTS; CHANGE OR DELETE THEM.
-  # sim$event2Test1 <- " this is test for event 2. " # for dummy unit test
-  # sim$event2Test2 <- 777  # for dummy unit test
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
 .inputObjects <- function(sim) {
-  # Any code written here will be run during the simInit for the purpose of creating
-  # any objects required by this module and identified in the inputObjects element of defineModule.
-  # This is useful if there is something required before simulation to produce the module
-  # object dependencies, including such things as downloading default datasets, e.g.,
-  # downloadData("LCC2005", modulePath(sim)).
-  # Nothing should be created here that does not create a named object in inputObjects.
-  # Any other initiation procedures should be put in "init" eventType of the doEvent function.
-  # Note: the module developer can check if an object is 'suppliedElsewhere' to
-  # selectively skip unnecessary steps because the user has provided those inputObjects in the
-  # simInit call, or another module will supply or has supplied it. e.g.,
-  # if (!suppliedElsewhere('defaultColor', sim)) {
-  #   sim$map <- Cache(prepInputs, extractURL('map')) # download, extract, load file from url in sourceURL
-  # }
 
   #cacheTags <- c(currentModule(sim), "function:.inputObjects") ## uncomment this if Cache is being used
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
