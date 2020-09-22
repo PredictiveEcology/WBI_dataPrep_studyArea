@@ -1,7 +1,8 @@
 #simple function for making sppEquivalencies objects tailed to each studyArea
-prepSppEquiv <- function(studyArea, sppEquiv = data("sppEquivalencies_CA", package = "LandR")){
+prepSppEquiv <- function(studyArea, sppEquiv){
 
   if (studyArea == 'RIA'){
+
     sppEquiv[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
                                       EN_generic_full = "Pine",
                                       Leading = "Pine leading")]

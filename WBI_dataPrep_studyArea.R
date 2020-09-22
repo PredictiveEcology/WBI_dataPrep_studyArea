@@ -91,25 +91,30 @@ Init <- function(sim) {
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
   if (P(sim)$studyAreaName == 'RIA') {
 
-    #studyArea = 5 TSAs for now - not sure we need em all, they aren't all boreal
-    #TSAs 08 and 41 are not harvested nearly as much as 8 and 16, and to a lesser extent, 40
     studyAreaUrl <- 'https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/view?usp=sharing'
-    studyAreaFun <- function(x) {
-      sf::st_as_sf(.) %>%
-        .[.$TSA_NUMBER %in% c('40', '08', '41', '24', '16'),] %>%
-        sf::as_Spatial(.)
-    }
+
     #originally, I thought this could be defined after the IF clause as Eliot suggested. But if RIA SA = SAL, or RTM = RTML, it falls apart
     sim$studyArea <- prepInputs(url = studyAreaUrl,
-                                fun = studyAreaFun,
                                 destinationPath = dPath,
-                                userTags = c("studyArea", cacheTags)
-    sim$rasterToMatch <- prepInputsLCC(studyArea = studyArea, destinationPath = dPath, filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
+                                userTags = c("studyArea", cacheTags)) %>%
+      sf::st_as_sf(.) %>%
+      .[.$TSA_NUMBER %in% c('40', '08', '41', '24', '16'),] %>%
+      sf::st_buffer(., 0) %>%
+      sf::as_Spatial(.) %>%
+      raster::aggregate(.)
+    sim$studyArea$studyAreaName <- "RIA"  #makes it a data.frame
+    #passing a custom function returns error (object 'studyAreaFun' not found)
+
+    sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
+                                              destinationPath = dPath,
+                                              filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
+    sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
     sim$rasterToMatchLarge <- sim$rasterToMatch
-    sim$rasterToMatchLarge = siM$rasterToMatch
+    sim$studyAreaLarge <- sim$studyArea #for now
 
     #get species objects - putting this in a script as it might be long with 7 study Areas
-    sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName)
+    data("sppEquivalencies_CA", package = "LandR")
+    sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
 
     #get climate objects - projectedMDC and historicalMDC
     projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
@@ -121,20 +126,20 @@ Init <- function(sim) {
 
   sim$historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
                                              destinationPath = dPath,
-                                             fun = 'rasterStack'
+                                             rasterToMatch = sim$rasterToMatch,
+                                             studyArea = sim$studyArea,
+                                             fun = 'raster::stack',
                                              useCache = TRUE,
                                              overwrite = TRUE,
-                                             userTags = c("histMDC", cacheTags)
+                                             userTags = c("histMDC", cacheTags))
 
   sim$projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
                                             destinationPath = dPath,
-                                            fun = 'rasterStack'
+                                            fun = 'raster::stack',
+                                            rasterToMatch = sim$rasterToMatch,
                                             useCache = TRUE,
                                             overwrite = TRUE,
-                                            userTags = c("projMDC", cacheTags)
-
-
-
+                                            userTags = c("projMDC", cacheTags))
 
   return(invisible(sim))
 }
