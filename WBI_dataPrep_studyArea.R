@@ -136,7 +136,7 @@ Init <- function(sim) {
   sim$projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
                                             destinationPath = dPath,
                                             fun = 'raster::stack',
-                                            studyArea = sim$studyArea
+                                            studyArea = sim$studyArea,
                                             rasterToMatch = sim$rasterToMatch,
                                             useCache = TRUE,
                                             overwrite = TRUE,
