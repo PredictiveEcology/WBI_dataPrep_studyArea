@@ -123,7 +123,7 @@ Init <- function(sim) {
   } else {
     stop("no other study areas at the moment :( ")
   }
-  browser()
+
   sim$historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
                                              destinationPath = dPath,
                                              rasterToMatch = sim$rasterToMatch,
