@@ -88,7 +88,7 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
 Init <- function(sim) {
 
   dPath <- file.path("data")
-
+  cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
   if (P(sim)$studyAreaName == 'RIA') {
 
     #studyArea = 5 TSAs for now - not sure we need em all, they aren't all boreal
@@ -100,7 +100,10 @@ Init <- function(sim) {
         sf::as_Spatial(.)
     }
     #originally, I thought this could be defined after the IF clause as Eliot suggested. But if RIA SA = SAL, or RTM = RTML, it falls apart
-    sim$studyArea <- prepInputs(url = studyAreaUrl, fun = studyAreaFun, destinationPath = dPath)
+    sim$studyArea <- prepInputs(url = studyAreaUrl,
+                                fun = studyAreaFun,
+                                destinationPath = dPath,
+                                userTags = c("studyArea", cacheTags)
     sim$rasterToMatch <- prepInputsLCC(studyArea = studyArea, destinationPath = dPath, filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
     sim$rasterToMatchLarge <- sim$rasterToMatch
     sim$rasterToMatchLarge = siM$rasterToMatch
@@ -121,14 +124,14 @@ Init <- function(sim) {
                                              fun = 'rasterStack'
                                              useCache = TRUE,
                                              overwrite = TRUE,
-                                             userTags = c("histMDC"))
+                                             userTags = c("histMDC", cacheTags)
 
   sim$projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
                                             destinationPath = dPath,
                                             fun = 'rasterStack'
                                             useCache = TRUE,
                                             overwrite = TRUE,
-                                            userTags = c("projMDC"))
+                                            userTags = c("projMDC", cacheTags)
 
 
 
