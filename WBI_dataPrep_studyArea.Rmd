@@ -29,8 +29,9 @@ For help writing in R Markdown, see https://rmarkdown.rstudio.com/.
 ```{r module_usage}
 library(SpaDES.core)
 
-setPaths(modulePath = file.path('../')
-getPaths() # shows where the 4 relevant paths are
+setPaths(modulePath = file.path('../'),
+         inputPath = "data")
+paths <- getPaths() # shows where the 4 relevant paths are
 
 times <- list(start = 0, end = 10)
 
@@ -48,7 +49,7 @@ inputs <- list()
 outputs <- list()
 
 mySim <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects)
+                 objects = objects, paths = paths)
 
 mySimOut <- spades(mySim)
 ```

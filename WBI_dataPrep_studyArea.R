@@ -123,7 +123,7 @@ Init <- function(sim) {
   } else {
     stop("no other study areas at the moment :( ")
   }
-
+  browser()
   sim$historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
                                              destinationPath = dPath,
                                              rasterToMatch = sim$rasterToMatch,
@@ -136,6 +136,7 @@ Init <- function(sim) {
   sim$projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
                                             destinationPath = dPath,
                                             fun = 'raster::stack',
+                                            studyArea = sim$studyArea
                                             rasterToMatch = sim$rasterToMatch,
                                             useCache = TRUE,
                                             overwrite = TRUE,
