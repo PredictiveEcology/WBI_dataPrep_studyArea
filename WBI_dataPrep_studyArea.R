@@ -15,7 +15,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "WBI_dataPrep_studyArea.Rmd")),
-  reqdPkgs = list('magrittr', 'raster', 'sf', 'PredictiveEcology@LandR'),
+  reqdPkgs = list('magrittr', 'raster', 'sf', 'PredictiveEcology/LandR@development'),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
@@ -35,7 +35,7 @@ defineModule(sim, list(
   ),
   inputObjects = bindrows(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
-    expectsInput(objectName = NA, objectClass = NA, desc = NA, sourceURL = NA)
+    # expectsInput(objectName = NA, objectClass = NA, desc = NA, sourceURL = NA)
   ),
   outputObjects = bindrows(
     #createsOutput("objectName", "objectClass", "output object description", ...),
