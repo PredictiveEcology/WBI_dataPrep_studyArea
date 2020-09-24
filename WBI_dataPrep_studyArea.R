@@ -6,7 +6,11 @@
 ## If exact location is required, functions will be: `sim$<moduleName>$FunctionName`.
 defineModule(sim, list(
   name = "WBI_dataPrep_studyArea",
-  description = "",
+  description = paste("this module prepares 3 sets of objects needed for fireSense in the WBI:",
+                      "1. study areas and corresponding rasterToMatch (as well as large versions",
+                      "2. species equivalencies tables and the sppEquiv column",
+                      "3. projected and historical climate data for fitting and predicting fires.",
+                      "Each is customized to the study area parameter passed as studyAreaName."),
   keywords = "",
   authors = structure(list(list(given = c("First", "Middle"), family = "Last", role = c("aut", "cre"), email = "email@example.com", comment = NULL)), class = "person"),
   childModules = character(0),
@@ -47,7 +51,8 @@ defineModule(sim, list(
     createsOutput(objectName = 'rasterToMatchLarge', objectClass = 'RasterLayer', desc = 'template raster for larger area'),
     createsOutput(objectName = 'sppEquiv', objectClass = 'data.table', desc = 'species equivalencies object'),
     createsOutput(objectName = 'studyArea', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area shapefile'),
-    createsOutput(objectName = 'studyAreaLarge', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area large shapefile')
+    createsOutput(objectName = 'studyAreaLarge', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area large shapefile'),
+    createsOutput(objectName = 'sppEquivCol', objectClass = 'character', desc = 'column that determines species names in LandR')
 
   )
 ))
@@ -91,8 +96,8 @@ Init <- function(sim) {
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
   if (P(sim)$studyAreaName == 'RIA') {
 
+    #1. get rtm, rtml, sa, sal
     studyAreaUrl <- 'https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/view?usp=sharing'
-
     #originally, I thought this could be defined after the IF clause as Eliot suggested. But if RIA SA = SAL, or RTM = RTML, it falls apart
     sim$studyArea <- prepInputs(url = studyAreaUrl,
                                 destinationPath = dPath,
@@ -103,8 +108,7 @@ Init <- function(sim) {
       sf::as_Spatial(.) %>%
       raster::aggregate(.)
     sim$studyArea$studyAreaName <- "RIA"  #makes it a data.frame
-    #passing a custom function returns error (object 'studyAreaFun' not found)
-
+    #FYI passing a custom function returns error (object 'studyAreaFun' not found even though its in quotes)
     sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
                                               destinationPath = dPath,
                                               filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
@@ -112,12 +116,13 @@ Init <- function(sim) {
     sim$rasterToMatchLarge <- sim$rasterToMatch
     sim$studyAreaLarge <- sim$studyArea #for now
 
-    #get species objects - putting this in a script as it might be long with 7 study Areas
+    #2. get species objects - putting this in a script as it might be long with 7 study Areas
     data("sppEquivalencies_CA", package = "LandR")
     sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
     rm(sppEquivalencies_CA)
 
-    #get climate objects - projectedMDC and historicalMDC
+
+    #3. get climate objects urls - projectedMDC and historicalMDC
     projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
     historicalClimateUrl <- 'https://drive.google.com/file/d/1DtB2_Gftl4R7T4yM9-mjVCCXF5nBXKqD/view?usp=sharing'
 
