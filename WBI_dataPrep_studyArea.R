@@ -92,7 +92,7 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
 ### template initialization
 Init <- function(sim) {
 
-  dPath <- file.path("data")
+  dPath <- file.path('modules', currentModule(sim), 'data')
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
   if (P(sim)$studyAreaName == 'RIA') {
 
@@ -118,7 +118,8 @@ Init <- function(sim) {
 
     #2. get species objects - putting this in a script as it might be long with 7 study Areas
     data("sppEquivalencies_CA", package = "LandR")
-    sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
+    sim$sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
+    sim$sppEquivCol <- 'RIA'
     rm(sppEquivalencies_CA)
 
 
