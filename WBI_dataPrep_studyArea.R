@@ -135,9 +135,9 @@ Init <- function(sim) {
   data("sppEquivalencies_CA", package = "LandR")
   sim$sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
   rm(sppEquivalencies_CA)
-  sppColorVect <- RColorBrewer::brewer.pal(name = 'Paired', n = nrow(sim$sppEquiv) + 1)
-  names(sppColorVect) <- c(unique(sppEquiv[, .SD, .SD = sim$sppEquivCol]), 'mixed')
-  sim$sppColorVect <- sppColorVect
+
+  #Paired handles 12 colours so it is safer compared to Accent's 8 max
+  sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
 
   #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
   historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
