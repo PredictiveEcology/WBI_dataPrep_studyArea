@@ -115,6 +115,7 @@ Init <- function(sim) {
     #get species objects - putting this in a script as it might be long with 7 study Areas
     data("sppEquivalencies_CA", package = "LandR")
     sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
+    rm(sppEquivalencies_CA)
 
     #get climate objects - projectedMDC and historicalMDC
     projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
@@ -124,23 +125,35 @@ Init <- function(sim) {
     stop("no other study areas at the moment :( ")
   }
 
-  sim$historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
-                                             destinationPath = dPath,
-                                             rasterToMatch = sim$rasterToMatch,
-                                             studyArea = sim$studyArea,
-                                             fun = 'raster::stack',
-                                             useCache = TRUE,
-                                             overwrite = TRUE,
-                                             userTags = c("histMDC", cacheTags))
+  #postProcses isn't handling stack - something with file names - either no stack name, or every raster has the same name.
+  #either way it causes an error. tried omitting filename2 to no avail
+  #TODO: fix postProcess or .prepareFileBackedRaster
+  historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
+                                         destinationPath = dPath,
+                                         # rasterToMatch = sim$rasterToMatch,
+                                         # studyArea = sim$studyArea,
+                                         fun = 'raster::stack',
+                                         filename2 = paste0(P(sim)$studyAreaName, '_histClim.tif'),
+                                         useCache = TRUE,
+                                         userTags = c("histMDC", cacheTags))
+  historicalClimateRasters <- Cache(raster::projectRaster, historicalClimateRasters, to = sim$rasterToMatch,
+                                    userTags = c("reprojHistoricClimateRasters"))
+  sim$historicalClimateRasters <- Cache(raster::mask, historicalClimateRasters, sim$studyArea,
+                                        userTags = c("maskHistoricClimateRasters"))
 
-  sim$projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
-                                            destinationPath = dPath,
-                                            fun = 'raster::stack',
-                                            studyArea = sim$studyArea,
-                                            rasterToMatch = sim$rasterToMatch,
-                                            useCache = TRUE,
-                                            overwrite = TRUE,
-                                            userTags = c("projMDC", cacheTags))
+
+  projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
+                                         destinationPath = dPath,
+                                         # rasterToMatch = sim$rasterToMatch,
+                                         # studyArea = sim$studyArea,
+                                         fun = 'raster::stack',
+                                         filename2 = paste0(P(sim)$studyAreaName, '_projClim.tif'),
+                                         useCache = TRUE,
+                                         userTags = c("histMDC", cacheTags))
+  projectedClimateRasters <- Cache(raster::projectRaster, projectedClimateRasters, to = sim$rasterToMatch,
+                                    userTags = c("reprojHistoricClimateRasters"))
+  sim$projectedClimateRasters <- Cache(raster::mask, projectedClimateRasters, sim$studyArea,
+                                        userTags = c("maskProjectedClimateRasters"))
 
   return(invisible(sim))
 }
