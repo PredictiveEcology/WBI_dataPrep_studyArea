@@ -7,7 +7,6 @@ prepSppEquiv <- function(studyArea, sppEquiv){
                                       EN_generic_full = "Pine",
                                       Leading = "Pine leading")]
 
-    # Make LandWeb spp equivalencies
     sppEquiv[, RIA := c(Pice_mar = "Pice_mar", Pice_gla = "Pice_gla",
                         Pinu_con = "Pinu_con", Popu_tre = "Popu_tre",
                         Betu_pap = "Betu_pap",
@@ -29,10 +28,10 @@ prepSppEquiv <- function(studyArea, sppEquiv){
     sppEquiv <- sppEquiv[!is.na(RIA)]
     sppEquiv[RIA == "Pinu_con", KNN := "Pinu_Con"]
 
-
   } else {
+    #add your sppEquiv Objects here
     stop('no other spp equiv at the moment :( ')
   }
 
-  return(sppEquiv)
+  return(sppEquiv = sppEquiv)
 }

@@ -52,7 +52,8 @@ defineModule(sim, list(
     createsOutput(objectName = 'sppEquiv', objectClass = 'data.table', desc = 'species equivalencies object'),
     createsOutput(objectName = 'studyArea', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area shapefile'),
     createsOutput(objectName = 'studyAreaLarge', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area large shapefile'),
-    createsOutput(objectName = 'sppEquivCol', objectClass = 'character', desc = 'column that determines species names in LandR')
+    createsOutput(objectName = 'sppEquivCol', objectClass = 'character', desc = 'column that determines species names in LandR'),
+    createsOutput(objectName = 'sppColorVect', objectClass = 'character', desc = 'species colours for plotting')
 
   )
 ))
@@ -94,7 +95,10 @@ Init <- function(sim) {
 
   dPath <- file.path('modules', currentModule(sim), 'data')
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
-  if (P(sim)$studyAreaName == 'RIA') {
+
+  #### Prep studa-area specific objects####
+  #when adding study areas, add relevant climate urls, rtm and sa, and dont forget R script prepSppEquiv
+  if (grepl('RIA', P(sim)$studyAreaName)) {
 
     #1. get rtm, rtml, sa, sal
     studyAreaUrl <- 'https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/view?usp=sharing'
@@ -114,14 +118,10 @@ Init <- function(sim) {
                                               filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
     sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
     sim$rasterToMatchLarge <- sim$rasterToMatch
-    sim$studyAreaLarge <- sim$studyArea #for now
+    sim$studyAreaLarge <- sim$studyArea #for now.. other SA/SAL will likely be different
 
     #2. get species objects - putting this in a script as it might be long with 7 study Areas
-    data("sppEquivalencies_CA", package = "LandR")
-    sim$sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
     sim$sppEquivCol <- 'RIA'
-    rm(sppEquivalencies_CA)
-
 
     #3. get climate objects urls - projectedMDC and historicalMDC
     projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
@@ -131,9 +131,15 @@ Init <- function(sim) {
     stop("no other study areas at the moment :( ")
   }
 
-  #postProcses isn't handling stack - something with file names - either no stack name, or every raster has the same name.
-  #either way it causes an error. tried omitting filename2 to no avail
-  #TODO: fix postProcess or .prepareFileBackedRaster
+  #### get study area objects ####
+  data("sppEquivalencies_CA", package = "LandR")
+  sim$sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
+  rm(sppEquivalencies_CA)
+  sppColorVect <- RColorBrewer::brewer.pal(name = 'Paired', n = nrow(sim$sppEquiv) + 1)
+  names(sppColorVect) <- c(unique(sppEquiv[, .SD, .SD = sim$sppEquivCol]), 'mixed')
+  sim$sppColorVect <- sppColorVect
+
+  #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
   historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
                                          destinationPath = dPath,
                                          # rasterToMatch = sim$rasterToMatch,
@@ -147,7 +153,6 @@ Init <- function(sim) {
   sim$historicalClimateRasters <- Cache(raster::mask, historicalClimateRasters, sim$studyArea,
                                         userTags = c("maskHistoricClimateRasters"))
 
-
   projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
                                          destinationPath = dPath,
                                          # rasterToMatch = sim$rasterToMatch,
@@ -160,6 +165,7 @@ Init <- function(sim) {
                                     userTags = c("reprojHistoricClimateRasters"))
   sim$projectedClimateRasters <- Cache(raster::mask, projectedClimateRasters, sim$studyArea,
                                         userTags = c("maskProjectedClimateRasters"))
+
 
   return(invisible(sim))
 }
