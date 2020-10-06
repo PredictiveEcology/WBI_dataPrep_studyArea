@@ -43,6 +43,8 @@ defineModule(sim, list(
   ),
   outputObjects = bindrows(
     #createsOutput("objectName", "objectClass", "output object description", ...),
+    createsOutput(objectName = 'DEM', objectClass = 'RasterLayer',
+                  desc = 'digital elevation model resampled from 7.5 arcseconds'),
     createsOutput(objectName = 'historicalClimateRasters', objectClass = 'RasterStack',
                   desc = 'historical MDC calculated from ClimateNA data'),
     createsOutput(objectName = 'projectedClimateRasters', objectClass = 'RasterStack',
@@ -53,8 +55,8 @@ defineModule(sim, list(
     createsOutput(objectName = 'studyArea', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area shapefile'),
     createsOutput(objectName = 'studyAreaLarge', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area large shapefile'),
     createsOutput(objectName = 'sppEquivCol', objectClass = 'character', desc = 'column that determines species names in LandR'),
-    createsOutput(objectName = 'sppColorVect', objectClass = 'character', desc = 'species colours for plotting')
-
+    createsOutput(objectName = 'sppColorVect', objectClass = 'character', desc = 'species colours for plotting'),
+    createsOutput(objectName = 'SWI', objectClass = 'RasterLayer', desc = 'SAGA Wetness Index' )
   )
 ))
 
@@ -126,6 +128,7 @@ Init <- function(sim) {
     #3. get climate objects urls - projectedMDC and historicalMDC
     projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
     historicalClimateUrl <- 'https://drive.google.com/file/d/1DtB2_Gftl4R7T4yM9-mjVCCXF5nBXKqD/view?usp=sharing'
+    SWIurl <- 'https://drive.google.com/file/d/1sxS8KJ7ZoCs1lB9ggBKm6fUTTRKPkVWD/view?usp=sharing'
 
   } else {
     stop("no other study areas at the moment :( ")
@@ -165,6 +168,20 @@ Init <- function(sim) {
                                     userTags = c("reprojHistoricClimateRasters"))
   sim$projectedClimateRasters <- Cache(raster::mask, projectedClimateRasters, sim$studyArea,
                                         userTags = c("maskProjectedClimateRasters"))
+
+  sim$DEM <- prepInputs(url = 'https://drive.google.com/file/d/121x_CfWy2XP_-1av0cYE7sxUfb4pmsup/view?usp=sharing',
+                        destinationPath = dPath,
+                        rasterToMatch = sim$rasterToMatch,
+                        studyArea = sim$studyArea,
+                        userTags = c("DEM", userTags),
+                        filename2 = paste0(P(sim)$studyAreaName, '_DEM.tif'))
+
+  sim$SWI <- prepInputs(url = SWIurl,
+                        destinationpath = dPath,
+                        studyArea = sim$studyArea,
+                        rasterToMatch = sim$rasterToMatch,
+                        filename2 = paste0(P(sim)$studyAreaName, '_SWI.tif'),
+                        userTags = c('SWI', userTags))
 
 
   return(invisible(sim))
