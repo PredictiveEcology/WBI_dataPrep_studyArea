@@ -38,13 +38,8 @@ defineModule(sim, list(
                     paste("study area name for WB project - one of BC, AB, SK, YK, NWT, MB, or RIA"))
   ),
   inputObjects = bindrows(
-    #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
-    # expectsInput(objectName = NA, objectClass = NA, desc = NA, sourceURL = NA)
   ),
   outputObjects = bindrows(
-    #createsOutput("objectName", "objectClass", "output object description", ...),
-    createsOutput(objectName = 'DEM', objectClass = 'RasterLayer',
-                  desc = 'digital elevation model resampled from 7.5 arcseconds'),
     createsOutput(objectName = 'historicalClimateRasters', objectClass = 'RasterStack',
                   desc = 'historical MDC calculated from ClimateNA data'),
     createsOutput(objectName = 'projectedClimateRasters', objectClass = 'RasterStack',
@@ -56,7 +51,6 @@ defineModule(sim, list(
     createsOutput(objectName = 'studyAreaLarge', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area large shapefile'),
     createsOutput(objectName = 'sppEquivCol', objectClass = 'character', desc = 'column that determines species names in LandR'),
     createsOutput(objectName = 'sppColorVect', objectClass = 'character', desc = 'species colours for plotting'),
-    createsOutput(objectName = 'SWI', objectClass = 'RasterLayer', desc = 'SAGA Wetness Index' )
   )
 ))
 
@@ -117,6 +111,7 @@ Init <- function(sim) {
     #FYI passing a custom function returns error (object 'studyAreaFun' not found even though its in quotes)
     sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
                                               destinationPath = dPath,
+                                              useCache = TRUE,
                                               filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
     sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
     sim$rasterToMatchLarge <- sim$rasterToMatch
@@ -128,7 +123,6 @@ Init <- function(sim) {
     #3. get climate objects urls - projectedMDC and historicalMDC
     projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
     historicalClimateUrl <- 'https://drive.google.com/file/d/1DtB2_Gftl4R7T4yM9-mjVCCXF5nBXKqD/view?usp=sharing'
-    SWIurl <- 'https://drive.google.com/file/d/1sxS8KJ7ZoCs1lB9ggBKm6fUTTRKPkVWD/view?usp=sharing'
 
   } else {
     stop("no other study areas at the moment :( ")
@@ -137,12 +131,13 @@ Init <- function(sim) {
   #### get study area objects ####
   data("sppEquivalencies_CA", package = "LandR")
   sim$sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
-  rm(sppEquivalencies_CA)
+
 
   #Paired handles 12 colours so it is safer compared to Accent's 8 max
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
 
   #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
+  browser()
   historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
                                          destinationPath = dPath,
                                          # rasterToMatch = sim$rasterToMatch,
@@ -151,10 +146,14 @@ Init <- function(sim) {
                                          filename2 = paste0(P(sim)$studyAreaName, '_histClim.tif'),
                                          useCache = TRUE,
                                          userTags = c("histMDC", cacheTags))
+
   historicalClimateRasters <- Cache(raster::projectRaster, historicalClimateRasters, to = sim$rasterToMatch,
                                     userTags = c("reprojHistoricClimateRasters"))
+
   sim$historicalClimateRasters <- Cache(raster::mask, historicalClimateRasters, sim$studyArea,
-                                        userTags = c("maskHistoricClimateRasters"))
+                                        userTags = c("maskHistoricClimateRasters"),
+                                        filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_histClim.tif')),
+                                        overwrite = TRUE)
 
   projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
                                          destinationPath = dPath,
@@ -167,21 +166,9 @@ Init <- function(sim) {
   projectedClimateRasters <- Cache(raster::projectRaster, projectedClimateRasters, to = sim$rasterToMatch,
                                     userTags = c("reprojHistoricClimateRasters"))
   sim$projectedClimateRasters <- Cache(raster::mask, projectedClimateRasters, sim$studyArea,
-                                        userTags = c("maskProjectedClimateRasters"))
-
-  sim$DEM <- prepInputs(url = 'https://drive.google.com/file/d/121x_CfWy2XP_-1av0cYE7sxUfb4pmsup/view?usp=sharing',
-                        destinationPath = dPath,
-                        rasterToMatch = sim$rasterToMatch,
-                        studyArea = sim$studyArea,
-                        userTags = c("DEM", userTags),
-                        filename2 = paste0(P(sim)$studyAreaName, '_DEM.tif'))
-
-  sim$SWI <- prepInputs(url = SWIurl,
-                        destinationpath = dPath,
-                        studyArea = sim$studyArea,
-                        rasterToMatch = sim$rasterToMatch,
-                        filename2 = paste0(P(sim)$studyAreaName, '_SWI.tif'),
-                        userTags = c('SWI', userTags))
+                                        userTags = c("maskProjectedClimateRasters"),
+                                       filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.tif')),
+                                       overwrite = TRUE)
 
 
   return(invisible(sim))
