@@ -137,7 +137,6 @@ Init <- function(sim) {
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
 
   #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
-  browser()
   historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
                                          destinationPath = dPath,
                                          # rasterToMatch = sim$rasterToMatch,
@@ -154,6 +153,12 @@ Init <- function(sim) {
                                         userTags = c("maskHistoricClimateRasters"),
                                         filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_histClim.tif')),
                                         overwrite = TRUE)
+
+  #TODO: The names should be preserved by the prepInputs call - need to fix prepInputs first.
+  #The names absolutely need 'year' at the start.
+  #The reason is not every year will have fires (data issue in RIA), so fireSense matches fires + climate rasters by year.
+  #This is not a very robust approach - suggestions? note even this could be parameterized with a fireYears parameter
+  names(sim$historicalClimateRasters) <- paste0('year', 1991:2017)
 
   projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
                                          destinationPath = dPath,
