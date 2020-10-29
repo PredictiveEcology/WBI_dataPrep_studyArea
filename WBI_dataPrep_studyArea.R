@@ -209,7 +209,6 @@ plotFun <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-
   #cacheTags <- c(currentModule(sim), "function:.inputObjects") ## uncomment this if Cache is being used
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
