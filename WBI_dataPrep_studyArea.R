@@ -34,6 +34,10 @@ defineModule(sim, list(
                     paste("Should this entire module be run with caching activated?",
                           "This is generally intended for data-type modules, where stochasticity",
                           "and time are not relevant")),
+    defineParameter("historicalFireYears", 'numeric', default = 1991:2017, NA, NA,
+                    desc = 'range of years captured by the historical climate data'),
+    defineParameter("projectedFireYears", 'numeric', default = 2011:2100, NA, NA,
+                    desc = 'range of years captured by the projected climate data'),
     defineParameter("studyAreaName", 'character', 'RIA', NA, NA,
                     paste("study area name for WB project - one of BC, AB, SK, YK, NWT, MB, or RIA"))
   ),
@@ -41,9 +45,9 @@ defineModule(sim, list(
   ),
   outputObjects = bindrows(
     createsOutput(objectName = 'historicalClimateRasters', objectClass = 'RasterStack',
-                  desc = 'historical MDC calculated from ClimateNA data'),
+                  desc = 'list of historical MDC calculated from ClimateNA data'),
     createsOutput(objectName = 'projectedClimateRasters', objectClass = 'RasterStack',
-                  desc = 'projected MDC calculated from ClimateNA data'),
+                  desc = 'list of projected MDC calculated from ClimateNA data'),
     createsOutput(objectName = 'rasterToMatch', objectClass = 'RasterLayer', desc = 'template raster'),
     createsOutput(objectName = 'rasterToMatchLarge', objectClass = 'RasterLayer', desc = 'template raster for larger area'),
     createsOutput(objectName = 'sppEquiv', objectClass = 'data.table', desc = 'species equivalencies object'),
@@ -137,43 +141,48 @@ Init <- function(sim) {
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
 
   #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
-  historicalClimateRasters <- prepInputs(url = historicalClimateUrl,
-                                         destinationPath = dPath,
-                                         # rasterToMatch = sim$rasterToMatch,
-                                         # studyArea = sim$studyArea,
-                                         fun = 'raster::stack',
-                                         filename2 = paste0(P(sim)$studyAreaName, '_histClim.tif'),
-                                         useCache = TRUE,
-                                         userTags = c("histMDC", cacheTags))
+  historicalMDC <- prepInputs(url = historicalClimateUrl,
+                              destinationPath = dPath,
+                              # rasterToMatch = sim$rasterToMatch,
+                              # studyArea = sim$studyArea,
+                              fun = 'raster::stack',
+                              filename2 = paste0(P(sim)$studyAreaName, '_histClim.grd'),
+                              useCache = TRUE,
+                              userTags = c("histMDC", cacheTags))
 
-  historicalClimateRasters <- Cache(raster::projectRaster, historicalClimateRasters, to = sim$rasterToMatch,
-                                    userTags = c("reprojHistoricClimateRasters"))
+  historicalMDC <- Cache(raster::projectRaster, historicalMDC, to = sim$rasterToMatch,
+                         datatype = 'INT2U',
+                         userTags = c("reprojHistoricClimateRasters"))
 
-  sim$historicalClimateRasters <- Cache(raster::mask, historicalClimateRasters, sim$studyArea,
-                                        userTags = c("maskHistoricClimateRasters"),
-                                        filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_histClim.tif')),
-                                        overwrite = TRUE)
+  historicalMDC <- Cache(raster::mask, historicalMDC, sim$studyArea,
+                         userTags = c("maskHistoricClimateRasters"),
+                         filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_histMDC.grd')),
+                         overwrite = TRUE)
 
-  #TODO: The names should be preserved by the prepInputs call - need to fix prepInputs first.
-  #The names absolutely need 'year' at the start.
+  #The names need 'year' at the start.
   #The reason is not every year will have fires (data issue in RIA), so fireSense matches fires + climate rasters by year.
-  #This is not a very robust approach - suggestions? note even this could be parameterized with a fireYears parameter
-  names(sim$historicalClimateRasters) <- paste0('year', 1991:2017)
+  names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears)
+  sim$historicalClimateRasters <- list('MDC' = historicalMDC)
 
-  projectedClimateRasters <- prepInputs(url = projectedClimateUrl,
-                                         destinationPath = dPath,
-                                         # rasterToMatch = sim$rasterToMatch,
-                                         # studyArea = sim$studyArea,
-                                         fun = 'raster::stack',
-                                         filename2 = paste0(P(sim)$studyAreaName, '_projClim.tif'),
-                                         useCache = TRUE,
-                                         userTags = c("histMDC", cacheTags))
-  projectedClimateRasters <- Cache(raster::projectRaster, projectedClimateRasters, to = sim$rasterToMatch,
-                                    userTags = c("reprojHistoricClimateRasters"))
-  sim$projectedClimateRasters <- Cache(raster::mask, projectedClimateRasters, sim$studyArea,
-                                        userTags = c("maskProjectedClimateRasters"),
-                                       filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.tif')),
-                                       overwrite = TRUE)
+  projectedMDC <- prepInputs(url = projectedClimateUrl,
+                             destinationPath = dPath,
+                             # rasterToMatch = sim$rasterToMatch,
+                             # studyArea = sim$studyArea,
+                             fun = 'raster::stack',
+                             filename2 = paste0(P(sim)$studyAreaName, '_projClim.grd'),
+                             useCache = TRUE,
+                             userTags = c("histMDC", cacheTags))
+
+  projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
+                        datatype = 'INT2U',
+                        userTags = c("reprojProjectedMDC"))
+
+  projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
+                        userTags = c("maskProjectedClimateRasters"),
+                        filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_projMDC.grd')),
+                        overwrite = TRUE)
+  names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears)
+  sim$projectedClimateRasters <- list('MDC' = projectedMDC)
 
 
   return(invisible(sim))
