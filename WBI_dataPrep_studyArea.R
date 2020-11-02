@@ -44,10 +44,10 @@ defineModule(sim, list(
   inputObjects = bindrows(
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = 'historicalClimateRasters', objectClass = 'RasterStack',
-                  desc = 'list of historical MDC calculated from ClimateNA data'),
-    createsOutput(objectName = 'projectedClimateRasters', objectClass = 'RasterStack',
-                  desc = 'list of projected MDC calculated from ClimateNA data'),
+    createsOutput(objectName = 'historicalClimateRasters', objectClass = 'list',
+                  desc = 'list of a single raster stack - historical MDC calculated from ClimateNA data'),
+    createsOutput(objectName = 'projectedClimateRasters', objectClass = 'list',
+                  desc = 'list of a single raster stack - projected MDC calculated from ClimateNA data'),
     createsOutput(objectName = 'rasterToMatch', objectClass = 'RasterLayer', desc = 'template raster'),
     createsOutput(objectName = 'rasterToMatchLarge', objectClass = 'RasterLayer', desc = 'template raster for larger area'),
     createsOutput(objectName = 'sppEquiv', objectClass = 'data.table', desc = 'species equivalencies object'),
