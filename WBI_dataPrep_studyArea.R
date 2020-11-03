@@ -93,7 +93,7 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
 ### template initialization
 Init <- function(sim) {
 
-  dPath <- file.path('modules', currentModule(sim), 'data')
+  dPath <- file.path('modules', currentModule(sim), 'data') ## TODO: allow use of 'inputs'
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
   #### Prep studa-area specific objects####
@@ -115,7 +115,7 @@ Init <- function(sim) {
     #FYI passing a custom function returns error (object 'studyAreaFun' not found even though its in quotes)
     sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
                                               destinationPath = dPath,
-                                              useCache = TRUE,
+                                              useCache = P(sim)$.useCache,
                                               filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
     sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
     sim$rasterToMatchLarge <- sim$rasterToMatch
@@ -147,7 +147,7 @@ Init <- function(sim) {
                               # studyArea = sim$studyArea,
                               fun = 'raster::stack',
                               filename2 = paste0(P(sim)$studyAreaName, '_histClim.grd'),
-                              useCache = TRUE,
+                              useCache = P(sim)$.useCache,
                               userTags = c("histMDC", cacheTags))
 
   historicalMDC <- Cache(raster::projectRaster, historicalMDC, to = sim$rasterToMatch,
@@ -170,7 +170,7 @@ Init <- function(sim) {
                              # studyArea = sim$studyArea,
                              fun = 'raster::stack',
                              filename2 = paste0(P(sim)$studyAreaName, '_projClim.grd'),
-                             useCache = TRUE,
+                             useCache = P(sim)$.useCache,
                              userTags = c("histMDC", cacheTags))
 
   projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
