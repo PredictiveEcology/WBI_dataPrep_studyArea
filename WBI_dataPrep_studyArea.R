@@ -34,7 +34,7 @@ defineModule(sim, list(
                     paste("Should this entire module be run with caching activated?",
                           "This is generally intended for data-type modules, where stochasticity",
                           "and time are not relevant")),
-    defineParameter("historicalFireYears", 'numeric', default = 1991:2017, NA, NA,
+    defineParameter("historicalFireYears", 'numeric', default = 1991:2019, NA, NA,
                     desc = 'range of years captured by the historical climate data'),
     defineParameter("projectedFireYears", 'numeric', default = 2011:2100, NA, NA,
                     desc = 'range of years captured by the projected climate data'),
@@ -116,6 +116,7 @@ Init <- function(sim) {
     sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
                                               destinationPath = dPath,
                                               useCache = P(sim)$.useCache,
+                                              overwrite = TRUE,
                                               filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
     sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
     sim$rasterToMatchLarge <- sim$rasterToMatch
@@ -126,7 +127,7 @@ Init <- function(sim) {
 
     #3. get climate objects urls - projectedMDC and historicalMDC
     projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
-    historicalClimateUrl <- 'https://drive.google.com/file/d/1DtB2_Gftl4R7T4yM9-mjVCCXF5nBXKqD/view?usp=sharing'
+    historicalClimateUrl <- 'https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/view?usp=sharing'
 
   } else {
     stop("no other study areas at the moment :( ")
@@ -163,7 +164,7 @@ Init <- function(sim) {
   #The reason is not every year will have fires (data issue in RIA), so fireSense matches fires + climate rasters by year.
   names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears)
   sim$historicalClimateRasters <- list('MDC' = historicalMDC)
-
+#as long as the names aren't preserved, there may be problems naming
   projectedMDC <- prepInputs(url = projectedClimateUrl,
                              destinationPath = dPath,
                              # rasterToMatch = sim$rasterToMatch,
