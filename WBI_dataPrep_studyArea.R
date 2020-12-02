@@ -147,7 +147,7 @@ Init <- function(sim) {
                               # rasterToMatch = sim$rasterToMatch,
                               # studyArea = sim$studyArea,
                               fun = 'raster::stack',
-                              filename2 = paste0(P(sim)$studyAreaName, '_histClim.grd'),
+                              filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_histClim.grd')),
                               useCache = P(sim)$.useCache,
                               userTags = c("histMDC", cacheTags))
 
@@ -170,7 +170,7 @@ Init <- function(sim) {
                              # rasterToMatch = sim$rasterToMatch,
                              # studyArea = sim$studyArea,
                              fun = 'raster::stack',
-                             filename2 = paste0(P(sim)$studyAreaName, '_projClim.grd'),
+                             filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.grd')),
                              useCache = P(sim)$.useCache,
                              userTags = c("histMDC", cacheTags))
 
