@@ -92,16 +92,14 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
 
 ### template initialization
 Init <- function(sim) {
-
   dPath <- file.path('modules', currentModule(sim), 'data') ## TODO: allow use of 'inputs'
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
   #### Prep studa-area specific objects####
   #when adding study areas, add relevant climate urls, rtm and sa, and dont forget R script prepSppEquiv
   if (grepl('RIA', P(sim)$studyAreaName)) {
-
     #1. get rtm, rtml, sa, sal
-    studyAreaUrl <- 'https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/view?usp=sharing'
+    studyAreaUrl <- 'https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU'
     #originally, I thought this could be defined after the IF clause as Eliot suggested. But if RIA SA = SAL, or RTM = RTML, it falls apart
     sim$studyArea <- prepInputs(url = studyAreaUrl,
                                 destinationPath = dPath,
@@ -126,8 +124,8 @@ Init <- function(sim) {
     sim$sppEquivCol <- 'RIA'
 
     #3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
-    historicalClimateUrl <- 'https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/view?usp=sharing'
+    projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3'
+    historicalClimateUrl <- 'https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-'
 
   } else {
     stop("no other study areas at the moment :( ")
@@ -141,7 +139,7 @@ Init <- function(sim) {
   #Paired handles 12 colours so it is safer compared to Accent's 8 max
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
 
-  #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
+  ## TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
   historicalMDC <- prepInputs(url = historicalClimateUrl,
                               destinationPath = dPath,
                               # rasterToMatch = sim$rasterToMatch,
@@ -164,7 +162,7 @@ Init <- function(sim) {
   #The reason is not every year will have fires (data issue in RIA), so fireSense matches fires + climate rasters by year.
   names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears)
   sim$historicalClimateRasters <- list('MDC' = historicalMDC)
-#as long as the names aren't preserved, there may be problems naming
+  #as long as the names aren't preserved, there may be problems naming
   projectedMDC <- prepInputs(url = projectedClimateUrl,
                              destinationPath = dPath,
                              # rasterToMatch = sim$rasterToMatch,
