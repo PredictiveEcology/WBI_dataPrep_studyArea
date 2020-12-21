@@ -166,39 +166,27 @@ Init <- function(sim) {
   # names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears) # Bad -- allows for index mismatching
   sim$historicalClimateRasters <- list('MDC' = historicalMDC)
   #as long as the names aren't preserved, there may be problems naming
-  projectedMDC <- Cache(prepInputs2, url = projectedClimateUrl,
-              destinationPath = dPath,
-              rtm = sim$rasterToMatch,
-              sa = sim$studyArea,
-              fun = 'raster::stack',
-              datatype = "INT2U",
-              filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.grd')),
-              useCache = P(sim)$.useCache,
-              userTags = c("histMDC", cacheTags, "reprojProjectedMDC", "maskProjectedClimateRasters"))
+  projectedMDC <- prepInputs(url = projectedClimateUrl,
+                             destinationPath = dPath,
+                             # rasterToMatch = sim$rasterToMatch,
+                             # studyArea = sim$studyArea,
+                             fun = 'raster::stack',
+                             filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.grd')),
+                             useCache = P(sim)$.useCache,
+                             userTags = c("histMDC", cacheTags))
 
+  projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
+                        datatype = 'INT2U',
+                        userTags = c("reprojProjectedMDC"))
 
-  # projectedMDC <- prepInputs(url = projectedClimateUrl,
-  #                            destinationPath = dPath,
-  #                            # rasterToMatch = sim$rasterToMatch,
-  #                            # studyArea = sim$studyArea,
-  #                            fun = 'raster::stack',
-  #                            filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.grd')),
-  #                            useCache = P(sim)$.useCache,
-  #                            userTags = c("histMDC", cacheTags))
-  #
-  # projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
-  #                       datatype = 'INT2U',
-  #                       userTags = c("reprojProjectedMDC"))
-  #
-  # projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
-  #                       userTags = c("maskProjectedClimateRasters"),
-  #                       filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_projMDC.grd')),
-  #                       overwrite = TRUE)
+  projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
+                        userTags = c("maskProjectedClimateRasters"),
+                        filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_projMDC.grd')),
+                        overwrite = TRUE)
 
   projectedMDC <- updateStackYearNames(projectedMDC, Par$projectedFireYears)
   # names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad -- allows for index mismatching
   sim$projectedClimateRasters <- list('MDC' = projectedMDC)
-
 
   return(invisible(sim))
 }
