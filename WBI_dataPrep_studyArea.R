@@ -92,14 +92,16 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
 
 ### template initialization
 Init <- function(sim) {
+
   dPath <- file.path('modules', currentModule(sim), 'data') ## TODO: allow use of 'inputs'
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
   #### Prep studa-area specific objects####
   #when adding study areas, add relevant climate urls, rtm and sa, and dont forget R script prepSppEquiv
   if (grepl('RIA', P(sim)$studyAreaName)) {
+
     #1. get rtm, rtml, sa, sal
-    studyAreaUrl <- 'https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU'
+    studyAreaUrl <- 'https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/view?usp=sharing'
     #originally, I thought this could be defined after the IF clause as Eliot suggested. But if RIA SA = SAL, or RTM = RTML, it falls apart
     sim$studyArea <- prepInputs(url = studyAreaUrl,
                                 destinationPath = dPath,
@@ -124,8 +126,8 @@ Init <- function(sim) {
     sim$sppEquivCol <- 'RIA'
 
     #3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3'
-    historicalClimateUrl <- 'https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-'
+    projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
+    historicalClimateUrl <- 'https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/view?usp=sharing'
 
   } else {
     stop("no other study areas at the moment :( ")
@@ -139,7 +141,7 @@ Init <- function(sim) {
   #Paired handles 12 colours so it is safer compared to Accent's 8 max
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
 
-  ## TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
+  #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
   historicalMDC <- prepInputs(url = historicalClimateUrl,
                               destinationPath = dPath,
                               # rasterToMatch = sim$rasterToMatch,
@@ -160,27 +162,41 @@ Init <- function(sim) {
 
   #The names need 'year' at the start.
   #The reason is not every year will have fires (data issue in RIA), so fireSense matches fires + climate rasters by year.
-  names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears)
+  historicalMDC <- updateStackYearNames(historicalMDC, Par$historicalFireYears)
+  # names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears) # Bad -- allows for index mismatching
   sim$historicalClimateRasters <- list('MDC' = historicalMDC)
   #as long as the names aren't preserved, there may be problems naming
-  projectedMDC <- prepInputs(url = projectedClimateUrl,
-                             destinationPath = dPath,
-                             # rasterToMatch = sim$rasterToMatch,
-                             # studyArea = sim$studyArea,
-                             fun = 'raster::stack',
-                             filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.grd')),
-                             useCache = P(sim)$.useCache,
-                             userTags = c("histMDC", cacheTags))
+  projectedMDC <- Cache(prepInputs2, url = projectedClimateUrl,
+              destinationPath = dPath,
+              rtm = sim$rasterToMatch,
+              sa = sim$studyArea,
+              fun = 'raster::stack',
+              datatype = "INT2U",
+              filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.grd')),
+              useCache = P(sim)$.useCache,
+              userTags = c("histMDC", cacheTags, "reprojProjectedMDC", "maskProjectedClimateRasters"))
 
-  projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
-                        datatype = 'INT2U',
-                        userTags = c("reprojProjectedMDC"))
 
-  projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
-                        userTags = c("maskProjectedClimateRasters"),
-                        filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_projMDC.grd')),
-                        overwrite = TRUE)
-  names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears)
+  # projectedMDC <- prepInputs(url = projectedClimateUrl,
+  #                            destinationPath = dPath,
+  #                            # rasterToMatch = sim$rasterToMatch,
+  #                            # studyArea = sim$studyArea,
+  #                            fun = 'raster::stack',
+  #                            filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.grd')),
+  #                            useCache = P(sim)$.useCache,
+  #                            userTags = c("histMDC", cacheTags))
+  #
+  # projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
+  #                       datatype = 'INT2U',
+  #                       userTags = c("reprojProjectedMDC"))
+  #
+  # projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
+  #                       userTags = c("maskProjectedClimateRasters"),
+  #                       filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_projMDC.grd')),
+  #                       overwrite = TRUE)
+
+  projectedMDC <- updateStackYearNames(projectedMDC, Par$projectedFireYears)
+  # names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad -- allows for index mismatching
   sim$projectedClimateRasters <- list('MDC' = projectedMDC)
 
 
@@ -219,3 +235,31 @@ plotFun <- function(sim) {
 }
 
 ### add additional events as needed by copy/pasting from above
+updateStackYearNames <- function(annualDataStack, desiredYears, parameterName) {
+  objectName <- as.character(substitute(annualDataStack))
+  parameterName <- as.character(substitute(desiredYears))[[3]]
+  # Sanity check -- both objects must have 4 length year  in them
+  hasYearStack <- all(grepl(grepTest4DigitYear, names(annualDataStack)))
+  if (!isTRUE(hasYearStack))
+    stop("The raster stack, ",objectName,", ", namingConventionTxt)
+  hasYearParam <- all(grepl(grepTest4DigitYear, desiredYears))
+  if (!isTRUE(hasYearParam))
+    stop("The parameter, ",parameterName,", ", namingConventionTxt)
+  annualDataStackInt <- as.integer(gsub(".*([[:digit:]]{4,4}).*", "\\1", names(annualDataStack)))
+  if (!identical(annualDataStackInt, desiredYears))
+    warning("User has provided a set of years for annual fire via P(sim)$",parameterName,", ",
+            "that does not match the input dataset of ", objectName, ":\n\n",
+            "names(",objectName,"): ", paste(names(annualDataStack), collapse = ", "), "\n\n",
+            "P(sim)$",parameterName,": ", paste(paste0('year', desiredYears), collapse = ", "),
+            "\n\n", "using the overlapping years provided by both")
+
+  whichannualDataStackToKeep <- which(annualDataStackInt %in% desiredYears)
+  annualDataStackInt <- annualDataStackInt[whichannualDataStackToKeep]
+  namesWithYearPrepended <- paste0("year", annualDataStackInt)
+
+  names(annualDataStack) <- namesWithYearPrepended
+  annualDataStack
+}
+
+grepTest4DigitYear <- "[[:digit:]]{4,4}"
+namingConventionTxt <- "does not have names that include the 4 digit year. Please use that naming convention"
