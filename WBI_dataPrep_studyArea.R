@@ -58,6 +58,7 @@ defineModule(sim, list(
     createsOutput(objectName = "studyAreaLarge", objectClass = "SpatialPolygonsDataFrame", desc = "study area large shapefile"),
     createsOutput(objectName = "sppEquivCol", objectClass = "character", desc = "column that determines species names in LandR"),
     createsOutput(objectName = "sppColorVect", objectClass = "character", desc = "species colours for plotting"),
+    createsOutput(objectName = "standAgeMap2011", objectClass = "RasterLayer", desc = "KNN stand age map in 2011")
   )
 ))
 
@@ -181,6 +182,20 @@ Init <- function(sim) {
   projectedMDC <- updateStackYearNames(projectedMDC, Par$projectedFireYears)
   # names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad -- allows for index mismatching
   sim$projectedClimateRasters <- list("MDC" = projectedMDC)
+
+  sim$standAgeMap2011 <- Cache(
+    LandR::prepInputsStandAgeMap,
+    ageURL = paste0("https://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
+                    "canada-forests-attributes_attributs-forests-canada/",
+                    "2011-attributes_attributs-2011/",
+                    "NFI_MODIS250m_2011_kNN_Structure_Stand_Age_v1.tif"),
+    rasterToMatch = sim$rasterToMatch,
+    studyArea = sim$studyArea,
+    destinationPath = dPath,
+    startTime = 2011,
+    filename2 = .suffix("standAgeMap2011.tif", paste0("_", P(sim)$studyAreaName)),
+    userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
+  )
 
   return(invisible(sim))
 }
