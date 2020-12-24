@@ -251,7 +251,6 @@ Init <- function(sim) {
   #Paired handles 12 colours so it is safer compared to Accent's 8 max
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
 
-  #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
   historicalMDC <- prepInputs(url = historicalClimateUrl,
                               destinationPath = dPath,
                               # rasterToMatch = sim$rasterToMatch,
@@ -311,23 +310,6 @@ Init <- function(sim) {
     userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
   )
 
-### template for save events
-Save <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  sim <- saveFiles(sim)
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-### template for plot events
-plotFun <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  #Plot(sim$object)
-
-  # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
 
@@ -346,6 +328,11 @@ plotFun <- function(sim) {
 updateStackYearNames <- function(annualDataStack, desiredYears, parameterName) {
   objectName <- as.character(substitute(annualDataStack))
   parameterName <- as.character(substitute(desiredYears))[[3]]
+
+  grepTest4DigitYear <- "[[:digit:]]{4,4}"
+  namingConventionTxt <- paste("does not have names that include the 4 digit year.",
+                               "Please use that naming convention.")
+
   # Sanity check -- both objects must have 4 length year  in them
   hasYearStack <- all(grepl(grepTest4DigitYear, names(annualDataStack)))
   if (!isTRUE(hasYearStack))
@@ -355,11 +342,11 @@ updateStackYearNames <- function(annualDataStack, desiredYears, parameterName) {
     stop("The parameter, ",parameterName,", ", namingConventionTxt)
   annualDataStackInt <- as.integer(gsub(".*([[:digit:]]{4,4}).*", "\\1", names(annualDataStack)))
   if (!identical(annualDataStackInt, desiredYears))
-    warning("User has provided a set of years for annual fire via P(sim)$",parameterName,", ",
+    warning("User has provided a set of years for annual fire via P(sim)$", parameterName,", ",
             "that does not match the input dataset of ", objectName, ":\n\n",
             "names(",objectName,"): ", paste(names(annualDataStack), collapse = ", "), "\n\n",
             "P(sim)$",parameterName,": ", paste(paste0('year', desiredYears), collapse = ", "),
-            "\n\n", "using the overlapping years provided by both")
+            "\n\n", "using the overlapping years provided by both.")
 
   whichannualDataStackToKeep <- which(annualDataStackInt %in% desiredYears)
   annualDataStackInt <- annualDataStackInt[whichannualDataStackToKeep]
@@ -368,6 +355,3 @@ updateStackYearNames <- function(annualDataStack, desiredYears, parameterName) {
   names(annualDataStack) <- namesWithYearPrepended
   annualDataStack
 }
-
-grepTest4DigitYear <- "[[:digit:]]{4,4}"
-namingConventionTxt <- "does not have names that include the 4 digit year. Please use that naming convention"
