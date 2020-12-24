@@ -1,9 +1,3 @@
-## Everything in this file gets sourced during `simInit()`,
-## and all functions and objects are put into the `simList`.
-## To use objects, use `sim$xxx` (they are globally available to all modules).
-## Functions can be used without `sim$` as they are namespaced to the module,
-## just like functions in R packages.
-## If exact location is required, functions will be: `sim$<moduleName>$FunctionName`.
 defineModule(sim, list(
   name = "WBI_dataPrep_studyArea",
   description = paste("this module prepares 3 sets of objects needed for fireSense in the WBI:",
@@ -22,7 +16,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "WBI_dataPrep_studyArea.Rmd")),
-  reqdPkgs = list("magrittr", "raster", "sf", "PredictiveEcology/LandR@development"),
+  reqdPkgs = list("magrittr", "raster", "sf", "sp", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
@@ -95,6 +89,43 @@ Init <- function(sim) {
 
   #### Prep study-area specific objects ####
   ## when adding study areas, add relevant climate urls, rtm and sa, and don't forget R script prepSppEquiv
+  allowedStudyAreas <- c("AB", "BC", "MB", "NT", "NU", "SK", "YT", ## prov/terr x BCR intersections
+                         "RIA") ## custom boundaries
+  provs <- c("British Columbia", "Alberta", "Saskatchewan", "Manitoba")
+  terrs <- c("Yukon", "Northwest Territories", "Nunavut")
+  WB <- c(provs, terrs)
+
+  targetCRS <- paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
+                     "+x_0=0 +y_0=0 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
+
+  bcrzip <- "https://www.birdscanada.org/download/gislab/bcr_terrestrial_shape.zip"
+
+  bcrshp <- Cache(prepInputs,
+                  url = bcrzip,
+                  destinationPath = dPath,
+                  targetCRS = targetCRS,
+                  useCache = P(sim)$.useCache,
+                  fun = "sf::st_read")
+
+  canProvs <- Cache(prepInputs,
+                    "GADM",
+                    fun = "base::readRDS",
+                    dlFun = "raster::getData",
+                    country = "CAN", level = 1, path = dPath,
+                    #targetCRS = targetCRS, ## TODO: fails on Windows
+                    targetFile = "gadm36_CAN_1_sp.rds", ## TODO: this will change as GADM data update
+                    destinationPath = dPath,
+                    useCache = P(sim)$.useCache) %>%
+    st_as_sf(.) %>%
+    st_transform(., targetCRS)
+
+  bcrWB <- bcrshp[bcrshp$BCR %in% c(4, 6:8), ]
+  provsWB <- canProvs[canProvs$NAME_1 %in% WB, ]
+
+  studyArea <- postProcess(provsWB, studyArea = bcrWB, useSAcrs = TRUE, useCache = P(sim)$.useCache,
+                           filename2 = NULL, overwrite = TRUE) %>%
+    as_Spatial(.)
+
   if (grepl("RIA", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
     studyAreaUrl <- "https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/"
@@ -109,15 +140,6 @@ Init <- function(sim) {
       sf::as_Spatial(.) %>%
       raster::aggregate(.)
     sim$studyArea$studyAreaName <- "RIA"  #makes it a data.frame
-    ## FYI passing a custom function returns error (object "studyAreaFun" not found even though its in quotes)
-    sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
-                                              destinationPath = dPath,
-                                              useCache = P(sim)$.useCache,
-                                              overwrite = TRUE,
-                                              filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
-    sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
-    sim$rasterToMatchLarge <- sim$rasterToMatch
-    sim$studyAreaLarge <- sim$studyArea #for now.. other SA/SAL will likely be different
 
     ## 2. get species objects - putting this in a script as it might be long with 7 study Areas
     sim$sppEquivCol <- "RIA"
@@ -125,9 +147,99 @@ Init <- function(sim) {
     ## 3. get climate objects urls - projectedMDC and historicalMDC
     projectedClimateUrl <- "https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/"
+  } else if (grepl("AB", P(sim)$studyAreaName)) {
+    ## 1. get rtm, rtml, sa, sal
+    sim$studyArea <- studyArea[studyArea$NAME_1 == "Alberta", ]
+    sim$studyArea$studyAreaName <- "AB"
+
+    ## 2. get species objects
+    sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
+
+    ## 3. get climate objects urls - projectedMDC and historicalMDC
+    projectedClimateUrl <- ""
+    historicalClimateUrl <- ""
+  } else if (grepl("BC", P(sim)$studyAreaName)) {
+    ## 1. get rtm, rtml, sa, sal
+    sim$studyArea <- studyArea[studyArea$NAME_1 == "British Columbia", ]
+    sim$studyArea$studyAreaName <- "BC"
+
+    ## 2. get species objects
+    sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
+
+    ## 3. get climate objects urls - projectedMDC and historicalMDC
+    projectedClimateUrl <- ""
+    historicalClimateUrl <- ""
+  } else if (grepl("MB", P(sim)$studyAreaName)) {
+    ## 1. get rtm, rtml, sa, sal
+    sim$studyArea <- studyArea[studyArea$NAME_1 == "Manitoba", ]
+    sim$studyArea$studyAreaName <- "MB"
+
+    ## 2. get species objects
+    sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
+
+    ## 3. get climate objects urls - projectedMDC and historicalMDC
+    projectedClimateUrl <- ""
+    historicalClimateUrl <- ""
+  } else if (grepl("NT", P(sim)$studyAreaName)) {
+    ## 1. get rtm, rtml, sa, sal
+    sim$studyArea <- studyArea[studyArea$NAME_1 == "Northwest Territories", ]
+    sim$studyArea$studyAreaName <- "NT"
+
+    ## 2. get species objects
+    sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
+
+    ## 3. get climate objects urls - projectedMDC and historicalMDC
+    projectedClimateUrl <- ""
+    historicalClimateUrl <- ""
+  } else if (grepl("NU", P(sim)$studyAreaName)) {
+    ## TODO: Nunavut x BCR intersection results in 3 polygons...add the two tiny ones to NWT, or drop?
+    # NT <- studyArea[studyArea$NAME_1 == "Nunavut", ]
+    # Plot(NT, new = TRUE)
+
+    ## 1. get rtm, rtml, sa, sal
+    sim$studyArea <- studyArea[studyArea$NAME_1 == "Nunavut", ]
+    sim$studyArea$studyAreaName <- "NU"
+
+    ## 2. get species objects
+    sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
+
+    ## 3. get climate objects urls - projectedMDC and historicalMDC
+    projectedClimateUrl <- ""
+    historicalClimateUrl <- ""
+  } else if (grepl("SK", P(sim)$studyAreaName)) {
+    ## 1. get rtm, rtml, sa, sal
+    sim$studyArea <- studyArea[studyArea$NAME_1 == "Saskatchewan", ]
+    sim$studyArea$studyAreaName <- "SK"
+
+    ## 2. get species objects
+    sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
+
+    ## 3. get climate objects urls - projectedMDC and historicalMDC
+    projectedClimateUrl <- ""
+    historicalClimateUrl <- ""
+  } else if (grepl("YT", P(sim)$studyAreaName)) {
+    ## 1. get rtm, rtml, sa, sal
+    sim$studyArea <- studyArea[studyArea$NAME_1 == "Yukon", ]
+    sim$studyArea$studyAreaName <- "YT"
+
+    ## 2. get species objects
+    sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
+
+    ## 3. get climate objects urls - projectedMDC and historicalMDC
+    projectedClimateUrl <- ""
+    historicalClimateUrl <- ""
   } else {
     stop("studyAreaName must be one of: ", paste(allowedStudyAreas, collapse = ", "))
   }
+
+  sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
+                                            destinationPath = dPath,
+                                            useCache = P(sim)$.useCache,
+                                            overwrite = TRUE,
+                                            filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
+  sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
+  sim$rasterToMatchLarge <- sim$rasterToMatch
+  sim$studyAreaLarge <- sim$studyArea
 
   #### get study area objects ####
   data("sppEquivalencies_CA", package = "LandR")
@@ -136,8 +248,10 @@ Init <- function(sim) {
   ## Paired handles 12 colours so it is safer compared to Accent's 8 max
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = "Paired")
 
-  ## TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is
-  ## handling stacks of file-backed rasters properly
+  #Paired handles 12 colours so it is safer compared to Accent's 8 max
+  sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
+
+  #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
   historicalMDC <- prepInputs(url = historicalClimateUrl,
                               destinationPath = dPath,
                               # rasterToMatch = sim$rasterToMatch,
@@ -161,7 +275,7 @@ Init <- function(sim) {
   historicalMDC <- updateStackYearNames(historicalMDC, Par$historicalFireYears)
   # names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears) # Bad -- allows for index mismatching
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
-  ## as long as the names aren't preserved, there may be problems naming
+
   projectedMDC <- prepInputs(url = projectedClimateUrl,
                              destinationPath = dPath,
                              # rasterToMatch = sim$rasterToMatch,
@@ -169,7 +283,7 @@ Init <- function(sim) {
                              fun = "raster::stack",
                              filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_projClim.grd")),
                              useCache = P(sim)$.useCache,
-                             userTags = c("histMDC", cacheTags))
+                             userTags = c("projMDC", cacheTags))
 
   projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
                         datatype = "INT2U",
@@ -197,6 +311,23 @@ Init <- function(sim) {
     userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
   )
 
+### template for save events
+Save <- function(sim) {
+  # ! ----- EDIT BELOW ----- ! #
+  # do stuff for this event
+  sim <- saveFiles(sim)
+
+  # ! ----- STOP EDITING ----- ! #
+  return(invisible(sim))
+}
+
+### template for plot events
+plotFun <- function(sim) {
+  # ! ----- EDIT BELOW ----- ! #
+  # do stuff for this event
+  #Plot(sim$object)
+
+  # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
 
