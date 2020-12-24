@@ -12,14 +12,17 @@ defineModule(sim, list(
                       "3. projected and historical climate data for fitting and predicting fires.",
                       "Each is customized to the study area parameter passed as studyAreaName."),
   keywords = "",
-  authors = structure(list(list(given = c("First", "Middle"), family = "Last", role = c("aut", "cre"), email = "email@example.com", comment = NULL)), class = "person"),
+  authors = c(
+    person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = "aut"),
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "aut")
+  ),
   childModules = character(0),
   version = list(SpaDES.core = "1.0.4.9003", WBI_dataPrep_studyArea = "0.0.0.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "WBI_dataPrep_studyArea.Rmd")),
-  reqdPkgs = list('magrittr', 'raster', 'sf', 'PredictiveEcology/LandR@development'),
+  reqdPkgs = list("magrittr", "raster", "sf", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
@@ -34,27 +37,27 @@ defineModule(sim, list(
                     paste("Should this entire module be run with caching activated?",
                           "This is generally intended for data-type modules, where stochasticity",
                           "and time are not relevant")),
-    defineParameter("historicalFireYears", 'numeric', default = 1991:2019, NA, NA,
-                    desc = 'range of years captured by the historical climate data'),
-    defineParameter("projectedFireYears", 'numeric', default = 2011:2100, NA, NA,
-                    desc = 'range of years captured by the projected climate data'),
-    defineParameter("studyAreaName", 'character', 'RIA', NA, NA,
+    defineParameter("historicalFireYears", "numeric", default = 1991:2019, NA, NA,
+                    desc = "range of years captured by the historical climate data"),
+    defineParameter("projectedFireYears", "numeric", default = 2011:2100, NA, NA,
+                    desc = "range of years captured by the projected climate data"),
+    defineParameter("studyAreaName", "character", "RIA", NA, NA,
                     paste("study area name for WB project - one of BC, AB, SK, YK, NWT, MB, or RIA"))
   ),
   inputObjects = bindrows(
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = 'historicalClimateRasters', objectClass = 'list',
-                  desc = 'list of a single raster stack - historical MDC calculated from ClimateNA data'),
-    createsOutput(objectName = 'projectedClimateRasters', objectClass = 'list',
-                  desc = 'list of a single raster stack - projected MDC calculated from ClimateNA data'),
-    createsOutput(objectName = 'rasterToMatch', objectClass = 'RasterLayer', desc = 'template raster'),
-    createsOutput(objectName = 'rasterToMatchLarge', objectClass = 'RasterLayer', desc = 'template raster for larger area'),
-    createsOutput(objectName = 'sppEquiv', objectClass = 'data.table', desc = 'species equivalencies object'),
-    createsOutput(objectName = 'studyArea', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area shapefile'),
-    createsOutput(objectName = 'studyAreaLarge', objectClass = 'SpatialPolygonsDataFrame', desc = 'study area large shapefile'),
-    createsOutput(objectName = 'sppEquivCol', objectClass = 'character', desc = 'column that determines species names in LandR'),
-    createsOutput(objectName = 'sppColorVect', objectClass = 'character', desc = 'species colours for plotting'),
+    createsOutput(objectName = "historicalClimateRasters", objectClass = "list",
+                  desc = "list of a single raster stack - historical MDC calculated from ClimateNA data"),
+    createsOutput(objectName = "projectedClimateRasters", objectClass = "list",
+                  desc = "list of a single raster stack - projected MDC calculated from ClimateNA data"),
+    createsOutput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster"),
+    createsOutput(objectName = "rasterToMatchLarge", objectClass = "RasterLayer", desc = "template raster for larger area"),
+    createsOutput(objectName = "sppEquiv", objectClass = "data.table", desc = "species equivalencies object"),
+    createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "study area shapefile"),
+    createsOutput(objectName = "studyAreaLarge", objectClass = "SpatialPolygonsDataFrame", desc = "study area large shapefile"),
+    createsOutput(objectName = "sppEquivCol", objectClass = "character", desc = "column that determines species names in LandR"),
+    createsOutput(objectName = "sppColorVect", objectClass = "character", desc = "species colours for plotting"),
   )
 ))
 
@@ -75,13 +78,7 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
       sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "WBI_dataPrep_studyArea", "plot")
       sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "WBI_dataPrep_studyArea", "save")
     },
-    plot = {
-
-    },
-    save = {
-
-    },
-    warning(paste("Undefined event type: \'", current(sim)[1, "eventType", with = FALSE],
+    warning(paste("Undefined event type: \"", current(sim)[1, "eventType", with = FALSE],
                   "\' in module \'", current(sim)[1, "moduleName", with = FALSE], "\'", sep = ""))
   )
   return(invisible(sim))
@@ -92,122 +89,99 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
 
 ### template initialization
 Init <- function(sim) {
-
-  dPath <- file.path('modules', currentModule(sim), 'data') ## TODO: allow use of 'inputs'
+  dPath <- file.path("modules", currentModule(sim), "data") ## TODO: allow use of "inputs"
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
-  #### Prep studa-area specific objects####
-  #when adding study areas, add relevant climate urls, rtm and sa, and dont forget R script prepSppEquiv
-  if (grepl('RIA', P(sim)$studyAreaName)) {
-
-    #1. get rtm, rtml, sa, sal
-    studyAreaUrl <- 'https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/view?usp=sharing'
-    #originally, I thought this could be defined after the IF clause as Eliot suggested. But if RIA SA = SAL, or RTM = RTML, it falls apart
+  #### Prep study-area specific objects ####
+  ## when adding study areas, add relevant climate urls, rtm and sa, and don't forget R script prepSppEquiv
+  if (grepl("RIA", P(sim)$studyAreaName)) {
+    ## 1. get rtm, rtml, sa, sal
+    studyAreaUrl <- "https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/"
+    ## originally, I thought this could be defined after the IF clause as Eliot suggested.
+    ## But if RIA SA = SAL, or RTM = RTML, it falls apart.
     sim$studyArea <- prepInputs(url = studyAreaUrl,
                                 destinationPath = dPath,
                                 userTags = c("studyArea", cacheTags)) %>%
       sf::st_as_sf(.) %>%
-      .[.$TSA_NUMBER %in% c('40', '08', '41', '24', '16'),] %>%
+      .[.$TSA_NUMBER %in% c("40", "08", "41", "24", "16"),] %>%
       sf::st_buffer(., 0) %>%
       sf::as_Spatial(.) %>%
       raster::aggregate(.)
     sim$studyArea$studyAreaName <- "RIA"  #makes it a data.frame
-    #FYI passing a custom function returns error (object 'studyAreaFun' not found even though its in quotes)
+    ## FYI passing a custom function returns error (object "studyAreaFun" not found even though its in quotes)
     sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
                                               destinationPath = dPath,
                                               useCache = P(sim)$.useCache,
                                               overwrite = TRUE,
-                                              filename2 = paste0(P(sim)$studyAreaName, '_rtm.tif'))
+                                              filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
     sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
     sim$rasterToMatchLarge <- sim$rasterToMatch
     sim$studyAreaLarge <- sim$studyArea #for now.. other SA/SAL will likely be different
 
-    #2. get species objects - putting this in a script as it might be long with 7 study Areas
-    sim$sppEquivCol <- 'RIA'
+    ## 2. get species objects - putting this in a script as it might be long with 7 study Areas
+    sim$sppEquivCol <- "RIA"
 
-    #3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- 'https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/view?usp=sharing'
-    historicalClimateUrl <- 'https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/view?usp=sharing'
-
+    ## 3. get climate objects urls - projectedMDC and historicalMDC
+    projectedClimateUrl <- "https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/"
+    historicalClimateUrl <- "https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/"
   } else {
-    stop("no other study areas at the moment :( ")
+    stop("studyAreaName must be one of: ", paste(allowedStudyAreas, collapse = ", "))
   }
 
   #### get study area objects ####
   data("sppEquivalencies_CA", package = "LandR")
   sim$sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
 
+  ## Paired handles 12 colours so it is safer compared to Accent's 8 max
+  sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = "Paired")
 
-  #Paired handles 12 colours so it is safer compared to Accent's 8 max
-  sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
-
-  #TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is handling stacks of file-backed rasters properly
+  ## TODO: fix postProcess or .prepareFileBackedRaster, or amend this code once postProcess is
+  ## handling stacks of file-backed rasters properly
   historicalMDC <- prepInputs(url = historicalClimateUrl,
                               destinationPath = dPath,
                               # rasterToMatch = sim$rasterToMatch,
                               # studyArea = sim$studyArea,
-                              fun = 'raster::stack',
-                              filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_histClim.grd')),
+                              fun = "raster::stack",
+                              filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_histClim.grd")),
                               useCache = P(sim)$.useCache,
-                              userTags = c("histMDC", cacheTags))
+                              userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
 
   historicalMDC <- Cache(raster::projectRaster, historicalMDC, to = sim$rasterToMatch,
-                         datatype = 'INT2U',
+                         datatype = "INT2U",
                          userTags = c("reprojHistoricClimateRasters"))
 
   historicalMDC <- Cache(raster::mask, historicalMDC, sim$studyArea,
                          userTags = c("maskHistoricClimateRasters"),
-                         filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_histMDC.grd')),
+                         filename = file.path(dPath, paste0(P(sim)$studyAreaName, "_histMDC.grd")),
                          overwrite = TRUE)
 
-  #The names need 'year' at the start.
-  #The reason is not every year will have fires (data issue in RIA), so fireSense matches fires + climate rasters by year.
+  ## The names need "year" at the start, because not every year will have fires (data issue in RIA),
+  ## so fireSense matches fires + climate rasters by year.
   historicalMDC <- updateStackYearNames(historicalMDC, Par$historicalFireYears)
   # names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears) # Bad -- allows for index mismatching
-  sim$historicalClimateRasters <- list('MDC' = historicalMDC)
-  #as long as the names aren't preserved, there may be problems naming
+  sim$historicalClimateRasters <- list("MDC" = historicalMDC)
+  ## as long as the names aren't preserved, there may be problems naming
   projectedMDC <- prepInputs(url = projectedClimateUrl,
                              destinationPath = dPath,
                              # rasterToMatch = sim$rasterToMatch,
                              # studyArea = sim$studyArea,
-                             fun = 'raster::stack',
-                             filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, '_projClim.grd')),
+                             fun = "raster::stack",
+                             filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_projClim.grd")),
                              useCache = P(sim)$.useCache,
                              userTags = c("histMDC", cacheTags))
 
   projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
-                        datatype = 'INT2U',
+                        datatype = "INT2U",
                         userTags = c("reprojProjectedMDC"))
 
   projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
                         userTags = c("maskProjectedClimateRasters"),
-                        filename = file.path(dPath, paste0(P(sim)$studyAreaName, '_projMDC.grd')),
+                        filename = file.path(dPath, paste0(P(sim)$studyAreaName, "_projMDC.grd")),
                         overwrite = TRUE)
-
   projectedMDC <- updateStackYearNames(projectedMDC, Par$projectedFireYears)
   # names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad -- allows for index mismatching
-  sim$projectedClimateRasters <- list('MDC' = projectedMDC)
+  sim$projectedClimateRasters <- list("MDC" = projectedMDC)
 
-  return(invisible(sim))
-}
-
-### template for save events
-Save <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  sim <- saveFiles(sim)
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-### template for plot events
-plotFun <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  #Plot(sim$object)
-
-  # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
 
