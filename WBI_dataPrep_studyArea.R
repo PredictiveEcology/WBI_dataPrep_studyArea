@@ -145,8 +145,8 @@ Init <- function(sim) {
     sim$sppEquivCol <- "RIA"
 
     ## 3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- "https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/"
   } else if (grepl("AB", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
     sim$studyArea <- studyArea[studyArea$NAME_1 == "Alberta", ]
@@ -156,8 +156,8 @@ Init <- function(sim) {
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
 
     ## 3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- ""
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/12DnBcvLZy_AtPH2fgDYWclqmYH6RxHUi/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/1tS4jYBa3gDUhH0LnC-_LVSoML1fwetq-/"
   } else if (grepl("BC", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
     sim$studyArea <- studyArea[studyArea$NAME_1 == "British Columbia", ]
@@ -167,8 +167,8 @@ Init <- function(sim) {
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
 
     ## 3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- ""
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1OCA0woTd4WTZl31-10M1MT6x8ukHApCR/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/1C4fG_YckuF0Wo_k6wDApsudQXfDj5i2N/"
   } else if (grepl("MB", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
     sim$studyArea <- studyArea[studyArea$NAME_1 == "Manitoba", ]
@@ -178,8 +178,8 @@ Init <- function(sim) {
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
 
     ## 3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- ""
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1fM_5d08J9LbMoTf5ssmC0EFE04eJhBUc/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/1Dr3C-YuWoOQp85qj3PhCJ4PKQPA_1qnG/"
   } else if (grepl("NT", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
     sim$studyArea <- studyArea[studyArea$NAME_1 == "Northwest Territories", ]
@@ -189,8 +189,8 @@ Init <- function(sim) {
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
 
     ## 3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- ""
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1txHk5m_uD6tD4rCBGYtmb8VknsAgSfpf/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/14R_C_yHKwT4VKe7vbLU6fm0etKxSr5pE/"
   } else if (grepl("NU", P(sim)$studyAreaName)) {
     ## TODO: Nunavut x BCR intersection results in 3 polygons...add the two tiny ones to NWT, or drop?
     # NT <- studyArea[studyArea$NAME_1 == "Nunavut", ]
@@ -204,8 +204,8 @@ Init <- function(sim) {
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
 
     ## 3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- ""
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1rCTvG2t_5pBBZjUjvtRM9MBk5_GwKUt5/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/1S4slSBpiK2UzO3yhXCqleac9X4CKebVl/"
   } else if (grepl("SK", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
     sim$studyArea <- studyArea[studyArea$NAME_1 == "Saskatchewan", ]
@@ -215,8 +215,8 @@ Init <- function(sim) {
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
 
     ## 3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- ""
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1xLS_m3zM_N92eUfxNfvmEdgTJFw19X2Q/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/1KnoPsxqwxJx7aPDEV7SzoLE5a52q7V34/"
   } else if (grepl("YT", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
     sim$studyArea <- studyArea[studyArea$NAME_1 == "Yukon", ]
@@ -226,20 +226,31 @@ Init <- function(sim) {
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
 
     ## 3. get climate objects urls - projectedMDC and historicalMDC
-    projectedClimateUrl <- ""
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1v5q1tIL01ht6HS63BMVOO4X1wcV-NuWO/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/18ALMK8nwRY6i7pHJpLLXMXbB55Xh4NmB/"
   } else {
     stop("studyAreaName must be one of: ", paste(allowedStudyAreas, collapse = ", "))
   }
 
-  sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
-                                            destinationPath = dPath,
-                                            useCache = P(sim)$.useCache,
-                                            overwrite = TRUE,
-                                            filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
-  sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
-  sim$rasterToMatchLarge <- sim$rasterToMatch
-  sim$studyAreaLarge <- sim$studyArea
+  if (grepl("RIA", P(sim)$studyAreaName)) {
+    sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
+                                              destinationPath = dPath,
+                                              useCache = P(sim)$.useCache,
+                                              overwrite = TRUE,
+                                              filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
+    sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
+    sim$rasterToMatchLarge <- sim$rasterToMatch
+    sim$studyAreaLarge <- sim$studyArea
+  } else {
+    sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
+                                              destinationPath = dPath,
+                                              useCache = P(sim)$.useCache,
+                                              overwrite = TRUE,
+                                              filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
+    sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
+    sim$rasterToMatchLarge <- sim$rasterToMatch ## TODO: use buffered climate rasters for RTML
+    sim$studyAreaLarge <- sim$studyArea ## TODO: how to get SAL from RTML? RTML used arcminute buffer, not metres
+  }
 
   #### get study area objects ####
   data("sppEquivalencies_CA", package = "LandR")
