@@ -31,6 +31,8 @@ defineModule(sim, list(
                     paste("Should this entire module be run with caching activated?",
                           "This is generally intended for data-type modules, where stochasticity",
                           "and time are not relevant")),
+    defineParameter("bufferDist", "numeric", 20000, NA, NA,
+                    "Distance (m) to buffer studyArea and rasterToMatch when creating 'Large' versions."),
     defineParameter("historicalFireYears", "numeric", default = 1991:2019, NA, NA,
                     desc = "range of years captured by the historical climate data"),
     defineParameter("projectedFireYears", "numeric", default = 2011:2100, NA, NA,
@@ -48,8 +50,10 @@ defineModule(sim, list(
     createsOutput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster"),
     createsOutput(objectName = "rasterToMatchLarge", objectClass = "RasterLayer", desc = "template raster for larger area"),
     createsOutput(objectName = "sppEquiv", objectClass = "data.table", desc = "species equivalencies object"),
-    createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "study area shapefile"),
-    createsOutput(objectName = "studyAreaLarge", objectClass = "SpatialPolygonsDataFrame", desc = "study area large shapefile"),
+    createsOutput(objectName = "standAgeMap2011", objectClass = "RasterLayer", desc = "time since disturbance raster for year 2011"),
+    createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "study area used for simulation (buffered to mitigate edge effects)"),
+    createsOutput(objectName = "studyAreaLarge", objectClass = "SpatialPolygonsDataFrame", desc = "study area used for module parameterization (buffered)"),
+    createsOutput(objectName = "studyAreaReporting", objectClass = "SpatialPolygonsDataFrame", desc = "study area used for reporting/posst-processing"),
     createsOutput(objectName = "sppEquivCol", objectClass = "character", desc = "column that determines species names in LandR"),
     createsOutput(objectName = "sppColorVect", objectClass = "character", desc = "species colours for plotting"),
     createsOutput(objectName = "standAgeMap2011", objectClass = "RasterLayer", desc = "KNN stand age map in 2011")
@@ -122,8 +126,9 @@ Init <- function(sim) {
   bcrWB <- bcrshp[bcrshp$BCR %in% c(4, 6:8), ]
   provsWB <- canProvs[canProvs$NAME_1 %in% WB, ]
 
-  studyArea <- postProcess(provsWB, studyArea = bcrWB, useSAcrs = TRUE, useCache = P(sim)$.useCache,
-                           filename2 = NULL, overwrite = TRUE) %>%
+  WBstudyArea <- postProcess(provsWB, studyArea = bcrWB, useSAcrs = TRUE,
+                             useCache = P(sim)$.useCache,
+                             filename2 = NULL, overwrite = TRUE) %>%
     as_Spatial(.)
 
   if (grepl("RIA", P(sim)$studyAreaName)) {
@@ -139,7 +144,6 @@ Init <- function(sim) {
       sf::st_buffer(., 0) %>%
       sf::as_Spatial(.) %>%
       raster::aggregate(.)
-    sim$studyArea$studyAreaName <- "RIA"  #makes it a data.frame
 
     ## 2. get species objects - putting this in a script as it might be long with 7 study Areas
     sim$sppEquivCol <- "RIA"
@@ -149,8 +153,7 @@ Init <- function(sim) {
     projectedClimateUrl <- "https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/"
   } else if (grepl("AB", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
-    sim$studyArea <- studyArea[studyArea$NAME_1 == "Alberta", ]
-    sim$studyArea$studyAreaName <- "AB"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Alberta", ]
 
     ## 2. get species objects
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
@@ -160,8 +163,7 @@ Init <- function(sim) {
     projectedClimateUrl <- "https://drive.google.com/file/d/1tS4jYBa3gDUhH0LnC-_LVSoML1fwetq-/"
   } else if (grepl("BC", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
-    sim$studyArea <- studyArea[studyArea$NAME_1 == "British Columbia", ]
-    sim$studyArea$studyAreaName <- "BC"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "British Columbia", ]
 
     ## 2. get species objects
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
@@ -171,8 +173,7 @@ Init <- function(sim) {
     projectedClimateUrl <- "https://drive.google.com/file/d/1C4fG_YckuF0Wo_k6wDApsudQXfDj5i2N/"
   } else if (grepl("MB", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
-    sim$studyArea <- studyArea[studyArea$NAME_1 == "Manitoba", ]
-    sim$studyArea$studyAreaName <- "MB"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Manitoba", ]
 
     ## 2. get species objects
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
@@ -182,8 +183,7 @@ Init <- function(sim) {
     projectedClimateUrl <- "https://drive.google.com/file/d/1Dr3C-YuWoOQp85qj3PhCJ4PKQPA_1qnG/"
   } else if (grepl("NT", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
-    sim$studyArea <- studyArea[studyArea$NAME_1 == "Northwest Territories", ]
-    sim$studyArea$studyAreaName <- "NT"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Northwest Territories", ]
 
     ## 2. get species objects
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
@@ -193,12 +193,11 @@ Init <- function(sim) {
     projectedClimateUrl <- "https://drive.google.com/file/d/14R_C_yHKwT4VKe7vbLU6fm0etKxSr5pE/"
   } else if (grepl("NU", P(sim)$studyAreaName)) {
     ## TODO: Nunavut x BCR intersection results in 3 polygons...add the two tiny ones to NWT, or drop?
-    # NT <- studyArea[studyArea$NAME_1 == "Nunavut", ]
+    # NT <- WBstudyArea[WBstudyArea$NAME_1 == "Nunavut", ]
     # Plot(NT, new = TRUE)
 
     ## 1. get rtm, rtml, sa, sal
-    sim$studyArea <- studyArea[studyArea$NAME_1 == "Nunavut", ]
-    sim$studyArea$studyAreaName <- "NU"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Nunavut", ]
 
     ## 2. get species objects
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
@@ -208,8 +207,7 @@ Init <- function(sim) {
     projectedClimateUrl <- "https://drive.google.com/file/d/1S4slSBpiK2UzO3yhXCqleac9X4CKebVl/"
   } else if (grepl("SK", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
-    sim$studyArea <- studyArea[studyArea$NAME_1 == "Saskatchewan", ]
-    sim$studyArea$studyAreaName <- "SK"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Saskatchewan", ]
 
     ## 2. get species objects
     sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
@@ -219,7 +217,7 @@ Init <- function(sim) {
     projectedClimateUrl <- "https://drive.google.com/file/d/1KnoPsxqwxJx7aPDEV7SzoLE5a52q7V34/"
   } else if (grepl("YT", P(sim)$studyAreaName)) {
     ## 1. get rtm, rtml, sa, sal
-    sim$studyArea <- studyArea[studyArea$NAME_1 == "Yukon", ]
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Yukon", ]
     sim$studyArea$studyAreaName <- "YT"
 
     ## 2. get species objects
@@ -232,25 +230,26 @@ Init <- function(sim) {
     stop("studyAreaName must be one of: ", paste(allowedStudyAreas, collapse = ", "))
   }
 
+  sim$studyArea <- spTransform(sim$studyArea, targetCRS)
+  sim$studyArea$studyAreaName <- P(sim)$studyAreaName  # makes it a data.frame
+  sim$studyAreaReporting <- sim$studyArea
+
   if (grepl("RIA", P(sim)$studyAreaName)) {
-    sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
-                                              destinationPath = dPath,
-                                              useCache = P(sim)$.useCache,
-                                              overwrite = TRUE,
-                                              filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
-    sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
-    sim$rasterToMatchLarge <- sim$rasterToMatch
+    ## NOTE: RIA uses the same unbuffered studyArea for parameterization, sims, and reporting
     sim$studyAreaLarge <- sim$studyArea
   } else {
-    sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
-                                              destinationPath = dPath,
-                                              useCache = P(sim)$.useCache,
-                                              overwrite = TRUE,
-                                              filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
-    sim$studyArea <- spTransform(sim$studyArea, crs(sim$rasterToMatch))
-    sim$rasterToMatchLarge <- sim$rasterToMatch ## TODO: use buffered climate rasters for RTML
-    sim$studyAreaLarge <- sim$studyArea ## TODO: how to get SAL from RTML? RTML used arcminute buffer, not metres
+    ## NOTE: studyArea and studyAreaLarge are the same [buffered] area
+    sim$studyArea <- buffer(sim$studyArea, P(sim)$bufferDist)
+    sim$studyAreaLarge <- sim$studyArea
   }
+
+  sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
+                                            destinationPath = dPath,
+                                            useCache = P(sim)$.useCache,
+                                            overwrite = TRUE,
+                                            filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
+  sim$rasterToMatchLarge <- sim$rasterToMatch
+  sim$rasterToMatchReporting <- mask(sim$rasterToMatch, sim$studyAreaReporting)
 
   #### get study area objects ####
   data("sppEquivalencies_CA", package = "LandR")
@@ -260,7 +259,7 @@ Init <- function(sim) {
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = "Paired")
 
   #Paired handles 12 colours so it is safer compared to Accent's 8 max
-  sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = 'Paired')
+  sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = "Paired")
 
   historicalMDC <- prepInputs(url = historicalClimateUrl,
                               destinationPath = dPath,
@@ -313,11 +312,11 @@ Init <- function(sim) {
                     "canada-forests-attributes_attributs-forests-canada/",
                     "2011-attributes_attributs-2011/",
                     "NFI_MODIS250m_2011_kNN_Structure_Stand_Age_v1.tif"),
-    rasterToMatch = sim$rasterToMatch,
-    studyArea = sim$studyArea,
+    rasterToMatch = sim$rasterToMatchLarge,
+    studyArea = sim$studyAreaLarge,
     destinationPath = dPath,
     startTime = 2011,
-    filename2 = .suffix("standAgeMap2011.tif", paste0("_", P(sim)$studyAreaName)),
+    filename2 = .suffix("standAgeMap_2011.tif", paste0("_", P(sim)$studyAreaName)),
     userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
   )
 
