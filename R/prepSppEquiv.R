@@ -1,8 +1,7 @@
 #simple function for making sppEquivalencies objects tailed to each studyArea
 prepSppEquiv <- function(studyArea, sppEquiv){
 
-  if (studyArea == 'RIA'){
-
+  if (studyArea == 'RIA') {
     sppEquiv[grep("Pin", LandR), `:=`(EN_generic_short = "Pine",
                                       EN_generic_full = "Pine",
                                       Leading = "Pine leading")]
@@ -27,7 +26,6 @@ prepSppEquiv <- function(studyArea, sppEquiv){
 
     sppEquiv <- sppEquiv[!is.na(RIA)]
     sppEquiv[RIA == "Pinu_con", KNN := "Pinu_Con"]
-
   } else {
     #add your sppEquiv Objects here
     stop('no other spp equiv at the moment :( ')

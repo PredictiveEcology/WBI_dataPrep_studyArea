@@ -253,7 +253,7 @@ Init <- function(sim) {
 
   #### get study area objects ####
   data("sppEquivalencies_CA", package = "LandR")
-  sim$sppEquiv <- prepSppEquiv(studyArea = P(sim)$studyAreaName, sppEquiv = sppEquivalencies_CA)
+  sim$sppEquiv <- prepSppEquiv(studyArea = "RIA", sppEquiv = sppEquivalencies_CA) ## TODO: confirm "RIA" instead of P(sim)$studyAreaName
 
   ## Paired handles 12 colours so it is safer compared to Accent's 8 max
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = "Paired")
