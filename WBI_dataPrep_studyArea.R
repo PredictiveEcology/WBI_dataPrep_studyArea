@@ -157,7 +157,8 @@ Init <- function(sim) {
     NT = c(FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE,  FALSE, TRUE), ## run with NU, so needs to be same
     NU = c(FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE,  FALSE, TRUE)  ## run with NT, so needs to be same
   )
-  sim$sppEquiv <- sppEquiv[which(wbiSppToUse[, ..studyAreaName][[1]]), ] ## subset per study area
+  sAN <- if (studyAreaName == "RIA") "BC" else studyAreaName
+  sim$sppEquiv <- sppEquiv[which(wbiSppToUse[, ..sAN][[1]]), ] ## subset per study area
   sim$sppEquivCol <- "LandR"
   rm(sppEquivalencies_CA)
 
