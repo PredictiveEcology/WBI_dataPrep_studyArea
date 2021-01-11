@@ -189,26 +189,12 @@ Init <- function(sim) {
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Manitoba", ]
     historicalClimateUrl <- "https://drive.google.com/file/d/1fM_5d08J9LbMoTf5ssmC0EFE04eJhBUc/"
     projectedClimateUrl <- "https://drive.google.com/file/d/1Dr3C-YuWoOQp85qj3PhCJ4PKQPA_1qnG/"
-  } else if (grepl("NT", P(sim)$studyAreaName)) {
-    ## 1. get rtm, rtml, sa, sal
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Northwest Territories", ]
-
-    ## 2. get species objects
-    sim$sppEquivCol <- "RIA" ## TODO: confirm if same for all WBI areas
-
-    ## 3. get climate objects urls - projectedMDC and historicalMDC
-    historicalClimateUrl <- "https://drive.google.com/file/d/1txHk5m_uD6tD4rCBGYtmb8VknsAgSfpf/"
-    projectedClimateUrl <- "https://drive.google.com/file/d/14R_C_yHKwT4VKe7vbLU6fm0etKxSr5pE/"
-  } else if (grepl("NU", P(sim)$studyAreaName)) {
-    ## TODO: Nunavut x BCR intersection results in 3 polygons...add the two tiny ones to NWT, or drop?
-    # NT <- WBstudyArea[WBstudyArea$NAME_1 == "Nunavut", ]
-    # Plot(NT, new = TRUE)
-
-    ## 1. get rtm, rtml, sa, sal
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Nunavut", ]
-
-
-    historicalClimateUrl <- "https://drive.google.com/file/d/1rCTvG2t_5pBBZjUjvtRM9MBk5_GwKUt5/"
+  } else if (grepl("NT|NU", P(sim)$studyAreaName)) {
+    ## NOTE: run NT and NU together!
+    message("NWT and NU will both be run together as a simgle study area.")
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 %in% c("Northwest Territories", "Nunavut"), ]
+    historicalClimateUrl <- "https://drive.google.com/file/d/1pTZMStaxE_rD-jvYk79uXi2Qka3niClL/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/1BbnsAxPlU6Uo7h0h0EBap5UyBLH_r7N_/"
   } else if (grepl("SK", P(sim)$studyAreaName)) {
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Saskatchewan", ]
     historicalClimateUrl <- "https://drive.google.com/file/d/1xLS_m3zM_N92eUfxNfvmEdgTJFw19X2Q/"
