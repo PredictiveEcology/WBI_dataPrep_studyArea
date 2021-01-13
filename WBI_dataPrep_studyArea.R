@@ -11,7 +11,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "aut")
   ),
   childModules = character(0),
-  version = list(LandR = "0.0.11.9000", SpaDES.core = "1.0.4.9003", WBI_dataPrep_studyArea = "0.0.0.9000"),
+  version = list(LandR = "0.0.11.9002", SpaDES.core = "1.0.4.9003", WBI_dataPrep_studyArea = "0.0.0.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
