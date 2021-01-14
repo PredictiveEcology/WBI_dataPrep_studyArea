@@ -143,10 +143,10 @@ Init <- function(sim) {
 
   ## all species considered in western boreal (will be subset later)
   data("sppEquivalencies_CA", package = "LandR", envir = environment())
-  allWBIspp <- c("Abie_las", "Betu_pap", "Lari_lar",
-                 "Pice_eng", "Pice_gla", "Pice_mar",
-                 "Pinu_ban", "Pinu_con", "Popu_tre") ## NOTE: 'Pinu_con' gets Pinu_Con & Pinu_Con_Lat
-  sppEquiv <- sppEquivalencies_CA[LandR %in% allWBIspp]
+  allWBIspp <- c("Abie_Las", "Betu_Pap", "Lari_Lar",
+                 "Pice_Eng", "Pice_Gla", "Pice_Mar",
+                 "Pinu_Ban", "Pinu_Con", "Popu_Tre")
+  sppEquiv <- sppEquivalencies_CA[Boreal %in% allWBIspp]
   wbiSppToUse <- data.table(
     LandR = sppEquiv[, LandR],
     BC = c(TRUE,  TRUE, TRUE, TRUE,  TRUE, TRUE, FALSE, TRUE,  TRUE),
