@@ -145,7 +145,7 @@ Init <- function(sim) {
   data("sppEquivalencies_CA", package = "LandR", envir = environment())
   allWBIspp <- c("Abie_Las", "Betu_Pap", "Lari_Lar",
                  "Pice_Eng", "Pice_Gla", "Pice_Mar",
-                 "Pinu_Ban", "Pinu_Con_Lat", "Popu_Tre")
+                 "Pinu_Ban", "Pinu_Con", "Popu_Tre") ## NOTE: Pinu_con merges Pinu_Con & Pinu_Con_Lat
   sppEquiv <- sppEquivalencies_CA[Boreal %in% allWBIspp]
   wbiSppToUse <- data.table(
     LandR = sppEquiv[, LandR],
