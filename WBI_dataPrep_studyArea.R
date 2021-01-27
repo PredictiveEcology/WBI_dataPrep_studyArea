@@ -146,7 +146,7 @@ Init <- function(sim) {
   allWBIspp <- c("Abie_Las", "Betu_Pap", "Lari_Lar",
                  "Pice_Eng", "Pice_Gla", "Pice_Mar",
                  "Pinu_Ban", "Pinu_Con", "Popu_Tre")
-  sppEquiv <- sppEquivalencies_CA[Boreal %in% allWBIspp]
+  sppEquiv <- sppEquivalencies_CA[KNN %in% allWBIspp]
   wbiSppToUse <- data.table(
     LandR = sppEquiv[, LandR],
     BC = c(TRUE,  TRUE, TRUE, TRUE,  TRUE, TRUE, FALSE, TRUE,  TRUE),
@@ -192,7 +192,7 @@ Init <- function(sim) {
     projectedClimateUrl <- "https://drive.google.com/file/d/1Dr3C-YuWoOQp85qj3PhCJ4PKQPA_1qnG/"
   } else if (grepl("NT|NU", P(sim)$studyAreaName)) {
     ## NOTE: run NT and NU together!
-    message("NWT and NU will both be run together as a simgle study area.")
+    message("NWT and NU will both be run together as a single study area.")
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 %in% c("Northwest Territories", "Nunavut"), ]
     historicalClimateUrl <- "https://drive.google.com/file/d/1pTZMStaxE_rD-jvYk79uXi2Qka3niClL/"
     projectedClimateUrl <- "https://drive.google.com/file/d/1BbnsAxPlU6Uo7h0h0EBap5UyBLH_r7N_/"
