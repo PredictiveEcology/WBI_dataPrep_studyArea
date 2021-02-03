@@ -11,12 +11,14 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "aut")
   ),
   childModules = character(0),
-  version = list(LandR = "0.0.11.9002", SpaDES.core = "1.0.4.9003", WBI_dataPrep_studyArea = "0.0.0.9000"),
+  version = list(LandR = "0.0.11.9002"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "WBI_dataPrep_studyArea.Rmd")),
-  reqdPkgs = list("magrittr", "raster", "sf", "sp", "PredictiveEcology/LandR@development"),
+  reqdPkgs = list("magrittr", "raster", "sf", "sp",
+                  "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
+                  "PredictiveEcology/LandR@development"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
