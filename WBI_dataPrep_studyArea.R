@@ -55,8 +55,12 @@ defineModule(sim, list(
                   desc = "template raster for larger area"),
     createsOutput("rasterToMatchReporting", objectClass = "RasterLayer",
                   desc = "template raster for reporting area"),
-    createsOutput("sppEquiv", objectClass = "data.table",
-                  desc = "species equivalencies object"),
+    createsOutput("sppColorVect", objectClass = "character",
+                  desc = "species colours for plotting"),
+    createsOutput("sppEquiv", objectClass = "character",
+                  desc = "table of LandR species names equivalencies"),
+    createsOutput("sppEquivCol", objectClass = "character",
+                  desc = "name of column to use in sppEquiv"),
     createsOutput("standAgeMap2011", objectClass = "RasterLayer",
                   desc = "time since disturbance raster for year 2011"),
     createsOutput("studyArea", objectClass = "SpatialPolygonsDataFrame",
@@ -64,13 +68,7 @@ defineModule(sim, list(
     createsOutput("studyAreaLarge", objectClass = "SpatialPolygonsDataFrame",
                   desc = "study area used for module parameterization (buffered)"),
     createsOutput("studyAreaReporting", objectClass = "SpatialPolygonsDataFrame",
-                  desc = "study area used for reporting/posst-processing"),
-    createsOutput("sppEquivCol", objectClass = "character",
-                  desc = "table of LandR species equivalencies"),
-    createsOutput("sppColorVect", objectClass = "character",
-                  desc = "species colours for plotting"),
-    createsOutput("standAgeMap2011", objectClass = "RasterLayer",
-                  desc = "KNN stand age map in 2011")
+                  desc = "study area used for reporting/post-processing")
   )
 ))
 
