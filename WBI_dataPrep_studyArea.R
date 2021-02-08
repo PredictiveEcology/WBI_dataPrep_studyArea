@@ -123,22 +123,34 @@ Init <- function(sim) {
                   useCache = P(sim)$.useCache,
                   fun = "sf::st_read")
 
+  if (packageVersion("reproducible") >= "1.2.5") {
+    fn1 <- function(x) {
+      x <- readRDS(x)
+      x <- st_as_sf(x)
+      st_transform(x, targetCRS)
+    }
+  } else {
+    fn1 <- "readRDS"
+  }
   canProvs <- Cache(prepInputs,
                     "GADM",
-                    fun = "base::readRDS",
+                    #fun = "base::readRDS",
+                    fun = fn1,
                     dlFun = "raster::getData",
                     country = "CAN", level = 1, path = dPath,
                     #targetCRS = targetCRS, ## TODO: fails on Windows
                     targetFile = "gadm36_CAN_1_sp.rds", ## TODO: this will change as GADM data update
                     destinationPath = dPath,
-                    useCache = P(sim)$.useCache) %>%
-    st_as_sf(.) %>%
-    st_transform(., targetCRS)
+                    useCache = P(sim)$.useCache) #%>%
+  if (packageVersion("reproducible") < "1.2.5") {
+    canProvs <- st_as_sf(canProvs) %>%
+      st_transform(., targetCRS)
+  }
 
   bcrWB <- bcrshp[bcrshp$BCR %in% c(4, 6:8), ]
   provsWB <- canProvs[canProvs$NAME_1 %in% WB, ]
 
-  WBstudyArea <- postProcess(provsWB, studyArea = bcrWB, useSAcrs = TRUE,
+  WBstudyArea <- Cache(postProcess, provsWB, studyArea = bcrWB, useSAcrs = TRUE,
                              useCache = P(sim)$.useCache,
                              filename2 = NULL, overwrite = TRUE) %>%
     as_Spatial(.)
@@ -169,7 +181,7 @@ Init <- function(sim) {
     studyAreaUrl <- "https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/"
     ## originally, I thought this could be defined after the IF clause as Eliot suggested.
     ## But if RIA SA = SAL, or RTM = RTML, it falls apart.
-    sim$studyArea <- prepInputs(url = studyAreaUrl,
+    sim$studyArea <- Cache(prepInputs, url = studyAreaUrl,
                                 destinationPath = dPath,
                                 userTags = c("studyArea", cacheTags)) %>%
       sf::st_as_sf(.) %>%
@@ -223,13 +235,15 @@ Init <- function(sim) {
     sim$studyAreaLarge <- sim$studyArea
   }
 
-  sim$rasterToMatch <- LandR::prepInputsLCC(studyArea = sim$studyArea,
+  sim$rasterToMatch <- Cache(LandR::prepInputsLCC, studyArea = sim$studyArea,
                                             destinationPath = dPath,
                                             useCache = P(sim)$.useCache,
                                             overwrite = TRUE,
                                             filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
   sim$rasterToMatchLarge <- sim$rasterToMatch
-  sim$rasterToMatchReporting <- mask(sim$rasterToMatch, sim$studyAreaReporting)
+  # This was raster::mask -- but that sometimes doesn't work because of incorrect dispatch that
+  #  conflicts with devtools::load_all("reproducible")
+  sim$rasterToMatchReporting <- Cache(maskInputs, sim$rasterToMatch, sim$studyAreaReporting)
 
   ## Paired handles 12 colours so it is safer compared to Accent's 8 max
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = "Paired")
@@ -237,23 +251,38 @@ Init <- function(sim) {
   #Paired handles 12 colours so it is safer compared to Accent's 8 max
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = "Paired")
 
-  historicalMDC <- prepInputs(url = historicalClimateUrl,
-                              destinationPath = dPath,
-                              # rasterToMatch = sim$rasterToMatch,
-                              # studyArea = sim$studyArea,
-                              fun = "raster::stack",
-                              filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_histClim.grd")),
-                              useCache = P(sim)$.useCache,
-                              userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
+  if (isTRUE(getOption("reproducible.useNewDigestAlgorithm") == 2)) { # new algo can handle in 1 step
+    historicalMDC <- Cache(prepInputs, url = historicalClimateUrl,
+                            destinationPath = dPath,
+                            rasterToMatch = sim$rasterToMatch,
+                            studyArea = sim$studyArea,
+                            fun = "raster::stack",
+                            datatype = "INT2U",
+                           method = "bilinear",
+                            filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_histClim.grd")),
+                            useCache = P(sim)$.useCache,
+                            omitArgs = "filename2", # Cache treats filenames as files; so it digests the file as an input
+                            userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
+  } else {
+    historicalMDC <- prepInputs(url = historicalClimateUrl,
+                                destinationPath = dPath,
+                                # rasterToMatch = sim$rasterToMatch,
+                                # studyArea = sim$studyArea,
+                                fun = "raster::stack",
+                                filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_histClim.grd")),
+                                useCache = P(sim)$.useCache,
+                                userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
 
-  historicalMDC <- Cache(raster::projectRaster, historicalMDC, to = sim$rasterToMatch,
-                         datatype = "INT2U",
-                         userTags = c("reprojHistoricClimateRasters"))
+    historicalMDC <- Cache(raster::projectRaster, historicalMDC, to = sim$rasterToMatch,
+                           datatype = "INT2U",
+                           userTags = c("reprojHistoricClimateRasters"))
 
-  historicalMDC <- Cache(raster::mask, historicalMDC, sim$studyArea,
-                         userTags = c("maskHistoricClimateRasters"),
-                         filename = file.path(dPath, paste0(P(sim)$studyAreaName, "_histMDC.grd")),
-                         overwrite = TRUE)
+    historicalMDC3 <- Cache(raster::mask, historicalMDC, sim$studyArea,
+                           userTags = c("maskHistoricClimateRasters"),
+                           filename = file.path(dPath, paste0(P(sim)$studyAreaName, "_histMDC.grd")),
+                           overwrite = TRUE)
+  }
+
 
   ## The names need "year" at the start, because not every year will have fires (data issue in RIA),
   ## so fireSense matches fires + climate rasters by year.
@@ -261,24 +290,41 @@ Init <- function(sim) {
   # names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears) # Bad -- allows for index mismatching
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
 
-  projectedMDC <- prepInputs(url = projectedClimateUrl,
-                             destinationPath = dPath,
-                             # rasterToMatch = sim$rasterToMatch,
-                             # studyArea = sim$studyArea,
-                             fun = "raster::stack",
-                             filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_projClim.grd")),
-                             useCache = P(sim)$.useCache,
-                             userTags = c("projMDC", cacheTags))
+  if (isTRUE(getOption("reproducible.useNewDigestAlgorithm") == 2)) { # new algo can handle in 1 step
+    projectedMDC <- Cache(prepInputs, url = projectedClimateUrl,
+                          destinationPath = dPath,
+                          rasterToMatch = sim$rasterToMatch,
+                          studyArea = sim$studyArea,
+                          fun = "raster::stack",
+                          datatype = "INT2U",
+                          filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_projMDC.grd")),
+                          omitArgs = "filename2",
+                          method = "bilinear",
+                          useCache = P(sim)$.useCache,
+                          userTags = c("projMDC", cacheTags))
 
-  projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
-                        datatype = "INT2U",
-                        userTags = c("reprojProjectedMDC"))
+  } else {
 
-  projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
-                        userTags = c("maskProjectedClimateRasters"),
-                        filename = file.path(dPath, paste0(P(sim)$studyAreaName, "_projMDC.grd")),
-                        overwrite = TRUE)
+    projectedMDC <- prepInputs(url = projectedClimateUrl,
+                               destinationPath = dPath,
+                               # rasterToMatch = sim$rasterToMatch,
+                               # studyArea = sim$studyArea,
+                               fun = "raster::stack",
+                               filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_projClim.grd")),
+                               useCache = P(sim)$.useCache,
+                               userTags = c("projMDC", cacheTags))
+
+    projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
+                          datatype = "INT2U",
+                          userTags = c("reprojProjectedMDC"))
+
+    projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
+                          userTags = c("maskProjectedClimateRasters"),
+                          filename = file.path(dPath, paste0(P(sim)$studyAreaName, "_projMDC.grd")),
+                          overwrite = TRUE)
+  }
   projectedMDC <- updateStackYearNames(projectedMDC, Par$projectedFireYears)
+
   # names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad -- allows for index mismatching
   sim$projectedClimateRasters <- list("MDC" = projectedMDC)
 
