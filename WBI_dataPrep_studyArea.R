@@ -269,18 +269,22 @@ Init <- function(sim) {
                                 # rasterToMatch = sim$rasterToMatch,
                                 # studyArea = sim$studyArea,
                                 fun = "raster::stack",
-                                filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_histClim.grd")),
+                                filename2 = paste0(studyAreaName, "_histMDC_lonlat.grd"),
+                                overwrite = TRUE,
                                 useCache = P(sim)$.useCache,
                                 userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
-
+    historicalMDC <- raster::stack(historicalMDC)
     historicalMDC <- Cache(raster::projectRaster, historicalMDC, to = sim$rasterToMatch,
                            datatype = "INT2U",
+                           filename2 = paste0(studyAreaName, "_histMDC_lcc.grd"),
+                           overwrite = TRUE,
                            userTags = c("reprojHistoricClimateRasters"))
-
-    historicalMDC3 <- Cache(raster::mask, historicalMDC, sim$studyArea,
+    historicalMDC <- raster::stack(historicalMDC)
+    historicalMDC <- Cache(raster::mask, historicalMDC, sim$studyArea,
                            userTags = c("maskHistoricClimateRasters"),
-                           filename = file.path(dPath, paste0(P(sim)$studyAreaName, "_histMDC.grd")),
+                           filename = file.path(dPath, paste0(studyAreaName, "_histMDC_lcc_masked.grd")),
                            overwrite = TRUE)
+    historicalMDC <- raster::stack(historicalMDC)
   }
 
 
@@ -304,24 +308,27 @@ Init <- function(sim) {
                           userTags = c("projMDC", cacheTags))
 
   } else {
-
     projectedMDC <- prepInputs(url = projectedClimateUrl,
                                destinationPath = dPath,
                                # rasterToMatch = sim$rasterToMatch,
                                # studyArea = sim$studyArea,
                                fun = "raster::stack",
-                               filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_projClim.grd")),
+                               filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_projMDC_lonlat.grd")),
+                               overwrite = TRUE,
                                useCache = P(sim)$.useCache,
                                userTags = c("projMDC", cacheTags))
-
+    projectedMDC <- stack(projectedMDC)
     projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
                           datatype = "INT2U",
+                          filename2 = paste0(studyAreaName, "_projMDC_lcc.grd"),
+                          overwrite = TRUE,
                           userTags = c("reprojProjectedMDC"))
-
+    projectedMDC <- stack(projectedMDC)
     projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
                           userTags = c("maskProjectedClimateRasters"),
-                          filename = file.path(dPath, paste0(P(sim)$studyAreaName, "_projMDC.grd")),
+                          filename = file.path(dPath, paste0(studyAreaName, "_projMDC_lcc_masked.grd")),
                           overwrite = TRUE)
+    projectedMDC <- stack(projectedMDC)
   }
   projectedMDC <- updateStackYearNames(projectedMDC, Par$projectedFireYears)
 
