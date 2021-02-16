@@ -258,7 +258,7 @@ Init <- function(sim) {
                             studyArea = sim$studyArea,
                             fun = "raster::stack",
                             datatype = "INT2U",
-                           method = "bilinear",
+                            method = "bilinear",
                             filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_histClim.grd")),
                             useCache = P(sim)$.useCache,
                             omitArgs = "filename2", # Cache treats filenames as files; so it digests the file as an input
@@ -286,7 +286,6 @@ Init <- function(sim) {
                            overwrite = TRUE)
     historicalMDC <- raster::stack(historicalMDC)
   }
-
 
   ## The names need "year" at the start, because not every year will have fires (data issue in RIA),
   ## so fireSense matches fires + climate rasters by year.
