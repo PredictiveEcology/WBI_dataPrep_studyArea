@@ -17,6 +17,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "WBI_dataPrep_studyArea.Rmd")),
   reqdPkgs = list("magrittr", "raster", "sf", "sp",
+                  "PredictiveEcology/reproducible@development (>= 1.2.6.9008)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
                   "PredictiveEcology/LandR@development"),
   parameters = rbind(
@@ -261,7 +262,7 @@ Init <- function(sim) {
                             method = "bilinear",
                             filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_histClim.grd")),
                             useCache = P(sim)$.useCache,
-                            omitArgs = "filename2", # Cache treats filenames as files; so it digests the file as an input
+                            quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
                             userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
   } else {
     historicalMDC <- prepInputs(url = historicalClimateUrl,
