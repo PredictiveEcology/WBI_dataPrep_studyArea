@@ -183,8 +183,8 @@ Init <- function(sim) {
     ## originally, I thought this could be defined after the IF clause as Eliot suggested.
     ## But if RIA SA = SAL, or RTM = RTML, it falls apart.
     sim$studyArea <- Cache(prepInputs, url = studyAreaUrl,
-                                destinationPath = dPath,
-                                userTags = c("studyArea", cacheTags)) %>%
+                           destinationPath = dPath,
+                           userTags = c("studyArea", cacheTags)) %>%
       sf::st_as_sf(.) %>%
       .[.$TSA_NUMBER %in% c("40", "08", "41", "24", "16"),] %>%
       sf::st_buffer(., 0) %>%
@@ -241,6 +241,7 @@ Init <- function(sim) {
                                             useCache = P(sim)$.useCache,
                                             overwrite = TRUE,
                                             filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
+  sim$rasterToMatch[] <- sim$rasterToMatch[] ## bring raster to memory
   sim$rasterToMatchLarge <- sim$rasterToMatch
   # This was raster::mask -- but that sometimes doesn't work because of incorrect dispatch that
   #  conflicts with devtools::load_all("reproducible")
@@ -290,8 +291,11 @@ Init <- function(sim) {
 
   ## The names need "year" at the start, because not every year will have fires (data issue in RIA),
   ## so fireSense matches fires + climate rasters by year.
+  ## WARNING: names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears) # Bad
+  ##          |-> allows for index mismatching
   historicalMDC <- updateStackYearNames(historicalMDC, Par$historicalFireYears)
-  # names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears) # Bad -- allows for index mismatching
+  historicalMDC[] <- historicalMDC[] ## bring raster to memory
+
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
 
   if (isTRUE(getOption("reproducible.useNewDigestAlgorithm") == 2)) { # new algo can handle in 1 step
@@ -331,6 +335,7 @@ Init <- function(sim) {
     projectedMDC <- stack(projectedMDC)
   }
   projectedMDC <- updateStackYearNames(projectedMDC, Par$projectedFireYears)
+  projectedMDC[] <- projectedMDC[] ## bring raster to memory
 
   # names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad -- allows for index mismatching
   sim$projectedClimateRasters <- list("MDC" = projectedMDC)
