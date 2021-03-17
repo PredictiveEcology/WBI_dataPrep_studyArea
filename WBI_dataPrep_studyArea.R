@@ -192,7 +192,7 @@ Init <- function(sim) {
       raster::aggregate(.)
 
     historicalClimateUrl <- "https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/"
-    projectedClimateUrl <- "https://drive.google.com/file/d/1ErQhfE5IYGRV_2voeb5iStWt_h2D5cV3/"
+    projectedClimateUrl <- "https://drive.google.com/file/d/1wTAHHFx0xcCiZerb0xxG4Vaq4flK4YqG/view?usp=sharing"
   } else if (grepl("AB", P(sim)$studyAreaName)) {
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Alberta", ]
     historicalClimateUrl <- "https://drive.google.com/file/d/12DnBcvLZy_AtPH2fgDYWclqmYH6RxHUi/"
