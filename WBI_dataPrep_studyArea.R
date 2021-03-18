@@ -241,7 +241,7 @@ Init <- function(sim) {
                              useCache = P(sim)$.useCache,
                              overwrite = TRUE,
                              filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
-  sim$rasterToMatch[] <- sim$rasterToMatch[] ## bring raster to memory
+  #sim$rasterToMatch[] <- sim$rasterToMatch[] ## bring raster to memory
   sim$rasterToMatchLarge <- sim$rasterToMatch
 
   # This was raster::mask -- but that sometimes doesn't work because of incorrect dispatch that
@@ -293,7 +293,7 @@ Init <- function(sim) {
   ## WARNING: names(historicalMDC) <- paste0('year', P(sim)$historicalFireYears) # Bad
   ##          |-> allows for index mismatching
   historicalMDC <- updateStackYearNames(historicalMDC, Par$historicalFireYears)
-  historicalMDC[] <- historicalMDC[] ## bring raster to memory
+  #historicalMDC[] <- historicalMDC[] ## bring raster to memory
 
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
 
@@ -337,7 +337,7 @@ Init <- function(sim) {
   ## WARNING: names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad
   ##          |-> allows for index mismatching
   projectedMDC <- updateStackYearNames(projectedMDC, Par$projectedFireYears)
-  projectedMDC[] <- projectedMDC[] ## bring raster to memory
+  #projectedMDC[] <- projectedMDC[] ## bring raster to memory
 
   sim$projectedClimateRasters <- list("MDC" = projectedMDC)
 

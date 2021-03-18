@@ -35,6 +35,7 @@
 "historicalMDC.zip" "f164c9707d548e21" "30975186" "xxhash64"
 "LandCoverOfCanada2005_V1_4.zip" "e100c037a257e377" "47185238" "xxhash64"
 "LCC2005_V1_4a.tif" "b50567fc83bcc5de" "437916202" "xxhash64"
+"MDC_CCSM4_RCP45_RIA.zip" "946a35d0830adce6" "101640011" "xxhash64"
 "MDC_CCSM4_RCP85_Alberta.grd" "8436cfb916549c9f" "1677" "xxhash64"
 "MDC_CCSM4_RCP85_Alberta.gri" "c269b150cc484728" "15716160" "xxhash64"
 "MDC_CCSM4_RCP85_Alberta.zip" "d4fed99ade48edb6" "3276470" "xxhash64"
