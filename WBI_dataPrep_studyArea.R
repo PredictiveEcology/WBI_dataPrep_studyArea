@@ -237,21 +237,20 @@ Init <- function(sim) {
   }
 
   sim$rasterToMatch <- Cache(LandR::prepInputsLCC, studyArea = sim$studyArea,
-                                            destinationPath = dPath,
-                                            useCache = P(sim)$.useCache,
-                                            overwrite = TRUE,
-                                            filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
+                             destinationPath = dPath,
+                             useCache = P(sim)$.useCache,
+                             overwrite = TRUE,
+                             filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
   sim$rasterToMatch[] <- sim$rasterToMatch[] ## bring raster to memory
   sim$rasterToMatchLarge <- sim$rasterToMatch
+
   # This was raster::mask -- but that sometimes doesn't work because of incorrect dispatch that
   #  conflicts with devtools::load_all("reproducible")
   sim$rasterToMatchReporting <- Cache(maskInputs, sim$rasterToMatch, sim$studyAreaReporting)
 
   ## Paired handles 12 colours so it is safer compared to Accent's 8 max
-  sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = "Paired")
-
-  #Paired handles 12 colours so it is safer compared to Accent's 8 max
-  sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol, palette = "Paired")
+  sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol,
+                                       palette = "Paired")
 
   if (isTRUE(getOption("reproducible.useNewDigestAlgorithm") == 2)) { # new algo can handle in 1 step
     historicalMDC <- Cache(prepInputs, url = historicalClimateUrl,
@@ -334,10 +333,12 @@ Init <- function(sim) {
                           overwrite = TRUE)
     projectedMDC <- stack(projectedMDC)
   }
+
+  ## WARNING: names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad
+  ##          |-> allows for index mismatching
   projectedMDC <- updateStackYearNames(projectedMDC, Par$projectedFireYears)
   projectedMDC[] <- projectedMDC[] ## bring raster to memory
 
-  # names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad -- allows for index mismatching
   sim$projectedClimateRasters <- list("MDC" = projectedMDC)
 
   sim$standAgeMap2011 <- Cache(
