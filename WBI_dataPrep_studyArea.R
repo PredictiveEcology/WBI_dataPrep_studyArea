@@ -101,7 +101,7 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
 
 ### template initialization
 Init <- function(sim) {
-  dPath <- file.path("modules", currentModule(sim), "data") ## TODO: allow use of "inputs"
+  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
   #### Prep study-area specific objects ####
