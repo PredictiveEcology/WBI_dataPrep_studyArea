@@ -236,7 +236,9 @@ Init <- function(sim) {
     sim$studyAreaLarge <- sim$studyArea
   }
 
-  sim$rasterToMatch <- Cache(LandR::prepInputsLCC, studyArea = sim$studyArea,
+  sim$rasterToMatch <- Cache(LandR::prepInputsLCC,
+                             year = 2005, ## TODO: use 2010
+                             studyArea = sim$studyArea,
                              destinationPath = dPath,
                              useCache = P(sim)$.useCache,
                              overwrite = TRUE,
