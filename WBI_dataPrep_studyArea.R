@@ -198,19 +198,17 @@ Init <- function(sim) {
       sf::as_Spatial(.) %>%
       raster::aggregate(.)
 
-    if (P(sim)$climateSSP == 245) {
-      historicalClimateUrl <- ""
-      projectedClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/"
+    projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
+      ""
     } else if (P(sim)$climateSSP == 370) {
-      historicalClimateUrl <- ""
-      projectedClimateUrl <- ""
+      ""
     } else if (P(sim)$climateSSP == 585) {
-      historicalClimateUrl <- ""
-      projectedClimateUrl <- ""
+      ""
     }
   } else if (grepl("AB", P(sim)$studyAreaName)) {
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Alberta", ]
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/12DnBcvLZy_AtPH2fgDYWclqmYH6RxHUi/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1t66suhaHD7ePOagSO7VwyqNuAsqln5tD/"
     } else if (P(sim)$climateSSP == 370) {
@@ -220,7 +218,7 @@ Init <- function(sim) {
     }
   } else if (grepl("BC", P(sim)$studyAreaName)) {
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "British Columbia", ]
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1OCA0woTd4WTZl31-10M1MT6x8ukHApCR/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1UQo62wCV3TJdV8zKGMg8rqtlIckPsqos/"
     } else if (P(sim)$climateSSP == 370) {
@@ -230,7 +228,7 @@ Init <- function(sim) {
     }
   } else if (grepl("MB", P(sim)$studyAreaName)) {
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Manitoba", ]
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1fM_5d08J9LbMoTf5ssmC0EFE04eJhBUc/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1hauzy3WXzHrlbEc_FsdjVB0ZaDUZpeFb/"
     } else if (P(sim)$climateSSP == 370) {
@@ -242,7 +240,7 @@ Init <- function(sim) {
     ## NOTE: run NT and NU together!
     message("NWT and NU will both be run together as a single study area.")
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 %in% c("Northwest Territories", "Nunavut"), ]
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1pTZMStaxE_rD-jvYk79uXi2Qka3niClL/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1tXgQDJutWYHPwuNUMzbHK28Qn1SR05iC/"
     } else if (P(sim)$climateSSP == 370) {
@@ -252,7 +250,7 @@ Init <- function(sim) {
     }
   } else if (grepl("SK", P(sim)$studyAreaName)) {
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Saskatchewan", ]
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1xLS_m3zM_N92eUfxNfvmEdgTJFw19X2Q/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/18g7yPwcUeBp9mpzQwv8QBmICRqtFTYn4/"
     } else if (P(sim)$climateSSP == 370) {
@@ -262,7 +260,7 @@ Init <- function(sim) {
     }
   } else if (grepl("YT", P(sim)$studyAreaName)) {
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Yukon", ]
-    historicalClimateUrl <- ""
+    historicalClimateUrl <- "https://drive.google.com/file/d/1v5q1tIL01ht6HS63BMVOO4X1wcV-NuWO/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1GGzORMtsxwUUwC9uBW9Hh4xNkdpRnaTn/"
     } else if (P(sim)$climateSSP == 370) {
