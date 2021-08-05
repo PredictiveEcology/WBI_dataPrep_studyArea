@@ -17,9 +17,11 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "WBI_dataPrep_studyArea.Rmd")),
   reqdPkgs = list("magrittr", "raster", "sf", "sp",
+                  "jimhester/archive",
                   "PredictiveEcology/reproducible@development (>= 1.2.6.9008)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
-                  "PredictiveEcology/LandR@development"),
+                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/climateData@development"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
@@ -159,8 +161,8 @@ Init <- function(sim) {
   provsWB <- canProvs[canProvs$NAME_1 %in% WB, ]
 
   WBstudyArea <- Cache(postProcess, provsWB, studyArea = bcrWB, useSAcrs = TRUE,
-                             useCache = P(sim)$.useCache,
-                             filename2 = NULL, overwrite = TRUE) %>%
+                       useCache = P(sim)$.useCache,
+                       filename2 = NULL, overwrite = TRUE) %>%
     as_Spatial(.)
 
   ## all species considered in western boreal (will be subset later)
@@ -189,6 +191,7 @@ Init <- function(sim) {
     studyAreaUrl <- "https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/"
     ## originally, I thought this could be defined after the IF clause as Eliot suggested.
     ## But if RIA SA = SAL, or RTM = RTML, it falls apart.
+    studyAreaNameLong <- "RIA"
     sim$studyArea <- Cache(prepInputs, url = studyAreaUrl,
                            destinationPath = dPath,
                            userTags = c("studyArea", cacheTags)) %>%
@@ -198,7 +201,8 @@ Init <- function(sim) {
       sf::as_Spatial(.) %>%
       raster::aggregate(.)
 
-    historicalClimateUrl <- "https://drive.google.com/file/d/1vQXi10thWsDyLW-tu300ZMG655tHyE_-/"
+    demUrl <- "https://drive.google.com/file/d/13sGg1X9DEOSkedg1m0PxcdJiuBESk072/"
+    historicalClimateUrl <- "https://drive.google.com/file/d/1aO1nUnVrDqWkkDct05qfToay_1KL8P7Q/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       ""
     } else if (P(sim)$climateSSP == 370) {
@@ -207,8 +211,10 @@ Init <- function(sim) {
       ""
     }
   } else if (grepl("AB", P(sim)$studyAreaName)) {
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Alberta", ]
-    historicalClimateUrl <- "https://drive.google.com/file/d/12DnBcvLZy_AtPH2fgDYWclqmYH6RxHUi/"
+    studyAreaNameLong <- "Alberta"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
+    demUrl <- "https://drive.google.com/file/d/1g1SEU65zje6686pQXQzVVQQc44IXaznr/"
+    historicalClimateUrl <- "https://drive.google.com/file/d/1we9GqEVAORWLbHi3it66VnCcvLu85QIk/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1t66suhaHD7ePOagSO7VwyqNuAsqln5tD/"
     } else if (P(sim)$climateSSP == 370) {
@@ -217,8 +223,10 @@ Init <- function(sim) {
       "https://drive.google.com/file/d/17Ol-1Ut1YX_MciDSnIkZwsEqq94rjfGm/"
     }
   } else if (grepl("BC", P(sim)$studyAreaName)) {
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "British Columbia", ]
-    historicalClimateUrl <- "https://drive.google.com/file/d/1OCA0woTd4WTZl31-10M1MT6x8ukHApCR/"
+    studyAreaNameLong <- "British Columbia"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
+    demUrl <- "https://drive.google.com/file/d/1DaAYFr0z38qmbZcz452QPMP_fzwUIqLD/"
+    historicalClimateUrl <- "https://drive.google.com/file/d/1usLRFsv2e4OkkfxKqZ7DA_7Go1CyvEUk/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1UQo62wCV3TJdV8zKGMg8rqtlIckPsqos/"
     } else if (P(sim)$climateSSP == 370) {
@@ -227,8 +235,10 @@ Init <- function(sim) {
       "https://drive.google.com/file/d/10id-iJyvYdIc85EwWJ0SYL5nRTsjQbp_/"
     }
   } else if (grepl("MB", P(sim)$studyAreaName)) {
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Manitoba", ]
-    historicalClimateUrl <- "https://drive.google.com/file/d/1fM_5d08J9LbMoTf5ssmC0EFE04eJhBUc/"
+    studyAreaNameLong <- "Manitoba"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
+    demUrl <- "https://drive.google.com/file/d/1X7b2CE6QyCvik3UG9pUj6zc4b5UYZi8w/"
+    historicalClimateUrl <- "https://drive.google.com/file/d/1bywYpz5kF4KBJUjARTx4WLcFS5Sij74l/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1hauzy3WXzHrlbEc_FsdjVB0ZaDUZpeFb/"
     } else if (P(sim)$climateSSP == 370) {
@@ -239,8 +249,10 @@ Init <- function(sim) {
   } else if (grepl("NT|NU", P(sim)$studyAreaName)) {
     ## NOTE: run NT and NU together!
     message("NWT and NU will both be run together as a single study area.")
+    studyAreaNameLong <- "Northwest Territories & Nunavut"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 %in% c("Northwest Territories", "Nunavut"), ]
-    historicalClimateUrl <- "https://drive.google.com/file/d/1pTZMStaxE_rD-jvYk79uXi2Qka3niClL/"
+    demUrl <- "https://drive.google.com/file/d/13n8LjQJihy9kd3SniS91EuXunowbWOBa/"
+    historicalClimateUrl <- "https://drive.google.com/file/d/1rZDW2lB9jUZISsSmKEFQYJJlXik8qaXT/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1tXgQDJutWYHPwuNUMzbHK28Qn1SR05iC/"
     } else if (P(sim)$climateSSP == 370) {
@@ -249,8 +261,10 @@ Init <- function(sim) {
       "https://drive.google.com/file/d/1Ob7qGMldjSQrAbQy-QIiIUg1-z98C1jS/"
     }
   } else if (grepl("SK", P(sim)$studyAreaName)) {
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Saskatchewan", ]
-    historicalClimateUrl <- "https://drive.google.com/file/d/1xLS_m3zM_N92eUfxNfvmEdgTJFw19X2Q/"
+    studyAreaNameLong <- "Saskatchewan"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
+    demUrl <- "https://drive.google.com/file/d/1CooPdqc3SlVVU7y_BaPfZD0OXt42fjBC/"
+    historicalClimateUrl <- "https://drive.google.com/file/d/1JikmJLdJhRsau3SysijLVQTAhkA6vtT8/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/18g7yPwcUeBp9mpzQwv8QBmICRqtFTYn4/"
     } else if (P(sim)$climateSSP == 370) {
@@ -259,8 +273,10 @@ Init <- function(sim) {
       "https://drive.google.com/file/d/1bmBaBFs8yVTIcAuL2ZhnPUOmGoakCE0b/"
     }
   } else if (grepl("YT", P(sim)$studyAreaName)) {
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == "Yukon", ]
-    historicalClimateUrl <- "https://drive.google.com/file/d/1v5q1tIL01ht6HS63BMVOO4X1wcV-NuWO/"
+    studyAreaNameLong <- "Yukon"
+    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
+    demUrl <- "https://drive.google.com/file/d/1CUMjLFGdGtwaQlErQ0Oq89ICUCcX641Q/"
+    historicalClimateUrl <- "https://drive.google.com/file/d/1V8pMe2x-M36qoLpZuOlWlAsY4N9Gkm5X/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
       "https://drive.google.com/file/d/1GGzORMtsxwUUwC9uBW9Hh4xNkdpRnaTn/"
     } else if (P(sim)$climateSSP == 370) {
@@ -303,41 +319,38 @@ Init <- function(sim) {
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol,
                                        palette = "Paired")
 
-  if (isTRUE(getOption("reproducible.useNewDigestAlgorithm") == 2)) { # new algo can handle in 1 step
-    historicalMDC <- Cache(prepInputs, url = historicalClimateUrl,
-                            destinationPath = dPath,
-                            rasterToMatch = sim$rasterToMatch,
-                            studyArea = sim$studyArea,
-                            fun = "raster::stack",
-                            datatype = "INT2U",
-                            method = "bilinear",
-                            filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_histClim.grd")),
-                            useCache = P(sim)$.useCache,
-                            quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
-                            userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
-  } else {
-    historicalMDC <- prepInputs(url = historicalClimateUrl,
-                                destinationPath = dPath,
-                                # rasterToMatch = sim$rasterToMatch,
-                                # studyArea = sim$studyArea,
-                                fun = "raster::stack",
-                                filename2 = paste0(studyAreaName, "_histMDC_lonlat.grd"),
-                                overwrite = TRUE,
-                                useCache = P(sim)$.useCache,
-                                userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
-    historicalMDC <- raster::stack(historicalMDC)
-    historicalMDC <- Cache(raster::projectRaster, historicalMDC, to = sim$rasterToMatch,
-                           datatype = "INT2U",
-                           filename2 = paste0(studyAreaName, "_histMDC_lcc.grd"),
-                           overwrite = TRUE,
-                           userTags = c("reprojHistoricClimateRasters"))
-    historicalMDC <- raster::stack(historicalMDC)
-    historicalMDC <- Cache(raster::mask, historicalMDC, sim$studyArea,
-                           userTags = c("maskHistoricClimateRasters"),
-                           filename = file.path(dPath, paste0(studyAreaName, "_histMDC_lcc_masked.grd")),
-                           overwrite = TRUE)
-    historicalMDC <- raster::stack(historicalMDC)
+  stopifnot(getOption("reproducible.useNewDigestAlgorithm") == 2)
+
+  ## get pre-made DEM to use with climate data
+  dem <- Cache(prepInputs, url = demUrl, destinationPath = dPath,
+               fun = "raster::raster",
+               useCache = P(sim)$.useCache,
+               userTags = c(paste0("DEM_", P(sim)$studyAreaName), cacheTags))
+
+  ## HISTORIC CLIMATE DATA
+  historicalClimatePath <- checkPath(file.path(dPath, "climate", "historic"), create = TRUE)
+  historicalClimateArchive <- file.path(historicalClimatePath, paste0(studyAreaNameLong, ".zip"))
+  historicalMDCfile <- file.path(historicalClimatePath, paste0("MDC_historical_", studyAreaName, ".grd"))
+
+  ## need to download and extract w/o prepInputs to preserve folder structure!
+  if (!file.exists(historicalClimateArchive)) {
+    googledrive::drive_download(file = as_id(historicalClimateUrl), path = historicalClimateArchive)
   }
+  archive::archive_extract(historicalClimateArchive, historicalClimatePath)
+
+  historicalMDC <- Cache(makeMDC,
+                         inputPath = file.path(historicalClimatePath, studyAreaNameLong),
+                         years = P(sim)$historicalFireYears)
+  historicalMDC <- Cache(postProcess,
+                         historicalMDC,
+                         rasterToMatch = sim$rasterToMatch,
+                         studyArea = sim$studyArea,
+                         datatype = "INT2U",
+                         method = "bilinear",
+                         filename2 = historicalMDCfile,
+                         useCache = P(sim)$.useCache,
+                         quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
+                         userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
 
   ## The names need "year" at the start, because not every year will have fires (data issue in RIA),
   ## so fireSense matches fires + climate rasters by year.
@@ -348,42 +361,31 @@ Init <- function(sim) {
 
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
 
-  if (isTRUE(getOption("reproducible.useNewDigestAlgorithm") == 2)) { # new algo can handle in 1 step
-    projectedMDC <- Cache(prepInputs, url = projectedClimateUrl,
-                          destinationPath = dPath,
-                          rasterToMatch = sim$rasterToMatch,
-                          studyArea = sim$studyArea,
-                          fun = "raster::stack",
-                          datatype = "INT2U",
-                          filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_projMDC.grd")),
-                          omitArgs = "filename2",
-                          method = "bilinear",
-                          useCache = P(sim)$.useCache,
-                          userTags = c("projMDC", cacheTags))
+  ## FUTURE CLIMATE DATA
+  projectedClimatePath <- checkPath(file.path(dPath, "climate", "future"), create = TRUE)
+  projectedClimateArchive <- file.path(projectedClimatePath, paste0(studyAreaNameLong, ".zip"))
+  projectedMDCfile <- file.path(projectedClimatePath,
+                                paste0("MDC_future_CanESM5_ssp", P(sim)$climateSSP, "_", studyAreaName, ".grd"))
 
-  } else {
-    projectedMDC <- prepInputs(url = projectedClimateUrl,
-                               destinationPath = dPath,
-                               # rasterToMatch = sim$rasterToMatch,
-                               # studyArea = sim$studyArea,
-                               fun = "raster::stack",
-                               filename2 = file.path(dPath, paste0(P(sim)$studyAreaName, "_projMDC_lonlat.grd")),
-                               overwrite = TRUE,
-                               useCache = P(sim)$.useCache,
-                               userTags = c("projMDC", cacheTags))
-    projectedMDC <- stack(projectedMDC)
-    projectedMDC <- Cache(raster::projectRaster, projectedMDC, to = sim$rasterToMatch,
-                          datatype = "INT2U",
-                          filename2 = paste0(studyAreaName, "_projMDC_lcc.grd"),
-                          overwrite = TRUE,
-                          userTags = c("reprojProjectedMDC"))
-    projectedMDC <- stack(projectedMDC)
-    projectedMDC <- Cache(raster::mask, projectedMDC, sim$studyArea,
-                          userTags = c("maskProjectedClimateRasters"),
-                          filename = file.path(dPath, paste0(studyAreaName, "_projMDC_lcc_masked.grd")),
-                          overwrite = TRUE)
-    projectedMDC <- stack(projectedMDC)
+  ## need to download and extract w/o prepInputs to preserve folder structure!
+  if (!file.exists(projectedClimateArchive)) {
+    googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
   }
+  archive::archive_extract(projectedClimateArchive, projectedClimatePath)
+
+  projectedMDC <- Cache(makeMDC,
+                        inputPath = file.path(projectedClimatePath, studyAreaNameLong),
+                        years = P(sim)$projectedFireYears)
+  projectedMDC <- Cache(postProcess,
+                        projectedMDC,
+                        rasterToMatch = sim$rasterToMatch,
+                        studyArea = sim$studyArea,
+                        datatype = "INT2U",
+                        method = "bilinear",
+                        filename2 = projectedMDCfile,
+                        useCache = P(sim)$.useCache,
+                        quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
+                        userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
 
   ## WARNING: names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad
   ##          |-> allows for index mismatching
