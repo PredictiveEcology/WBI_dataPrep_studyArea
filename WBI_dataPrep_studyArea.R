@@ -40,7 +40,7 @@ defineModule(sim, list(
                     "Distance (m) to buffer studyArea and rasterToMatch when creating 'Large' versions."),
     defineParameter("climateSSP", "numeric", 370, NA, NA,
                     "SSP emissions scenario for CanESM5: one of 245, 370, or 585."),
-    defineParameter("historicalFireYears", "numeric", default = 1991:2019, NA, NA,
+    defineParameter("historicalFireYears", "numeric", default = 1991:2020, NA, NA,
                     desc = "range of years captured by the historical climate data"),
     defineParameter("projectedFireYears", "numeric", default = 2011:2100, NA, NA,
                     desc = "range of years captured by the projected climate data"),
