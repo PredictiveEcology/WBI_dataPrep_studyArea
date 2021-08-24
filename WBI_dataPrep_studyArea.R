@@ -204,11 +204,11 @@ Init <- function(sim) {
     demUrl <- "https://drive.google.com/file/d/13sGg1X9DEOSkedg1m0PxcdJiuBESk072/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1aO1nUnVrDqWkkDct05qfToay_1KL8P7Q/"
     projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
-      ""
+      "https://drive.google.com/file/d/1FTBVxphBHDPD6qt05Ay79mW3-EiMbu6C/"
     } else if (P(sim)$climateSSP == 370) {
-      ""
+      "https://drive.google.com/file/d/16J7bHD3jgZefA2sS6GzKlYEXxTBa_KX8/"
     } else if (P(sim)$climateSSP == 585) {
-      ""
+      "https://drive.google.com/file/d/1xjEmVCx1B-4zt6uiDVH6N4c0wUqC9-Hs/"
     }
   } else if (grepl("AB", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "Alberta"
