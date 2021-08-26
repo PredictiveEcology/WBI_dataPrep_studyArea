@@ -193,7 +193,7 @@ Init <- function(sim) {
   sim$sppEquiv <- sppEquiv[which(wbiSppToUse[, ..sAN][[1]]), ] ## subset per study area
   sim$sppEquivCol <- "LandR"
   rm(sppEquivalencies_CA)
-browser()
+
   ## lookup table to get projectedClimateURL based on studyArea, GCM, and SSP
   dt <- data.table::fread(file = file.path(dataPath(sim), "climateDataURLs.csv"))
   projectedClimateUrl <- dt[studyArea == studyAreaName &
