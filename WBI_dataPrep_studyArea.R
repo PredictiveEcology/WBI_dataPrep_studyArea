@@ -38,8 +38,11 @@ defineModule(sim, list(
                           "and time are not relevant")),
     defineParameter("bufferDist", "numeric", 20000, NA, NA,
                     "Distance (m) to buffer studyArea and rasterToMatch when creating 'Large' versions."),
+    defineParameter("climateGCM", "numeric", "13GCMs_ensemble", NA, NA,
+                    paste("Global Circulation Model to use for climate projections:",
+                          "currently '13GCMs_ensemble' or 'CanESM5'.")),
     defineParameter("climateSSP", "numeric", 370, NA, NA,
-                    "SSP emissions scenario for CanESM5: one of 245, 370, or 585."),
+                    "SSP emissions scenario for `climateGCM`: one of 245, 370, or 585."),
     defineParameter("historicalFireYears", "numeric", default = 1991:2020, NA, NA,
                     desc = "range of years captured by the historical climate data"),
     defineParameter("projectedFireYears", "numeric", default = 2011:2100, NA, NA,
@@ -107,6 +110,11 @@ doEvent.WBI_dataPrep_studyArea = function(sim, eventTime, eventType) {
 Init <- function(sim) {
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
+
+  if (!P(sim)$climateGCM %in% c("13GCMs_ensemble", "CanESM5")) {
+    stop("Invalid climate model specified.\n",
+         "climateGCM should be one of '13GCMs_ensemble' or 'CanESM5'.")
+  }
 
   if (!P(sim)$climateSSP %in% c(245, 370, 585)) {
     stop("Invalid SSP scenario for CanESM5 climate model.\n",
@@ -186,6 +194,12 @@ Init <- function(sim) {
   sim$sppEquivCol <- "LandR"
   rm(sppEquivalencies_CA)
 
+  ## lookup table to get projectedClimateURL based on studyArea, GCM, and SSP
+  dt <- data.table::fread(file = file.path(dataPath(sim), "climateDataURLs.csv"))
+  projectedClimateUrl <- dt[studyArea == studyAreaName &
+                              GCM == P(sim)$climateGCM &
+                              SSP == P(sim)$climateSSP, GID]
+
   ## studyArea-specific shapefiles and rasters
   if (grepl("RIA", P(sim)$studyAreaName)) {
     studyAreaUrl <- "https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/"
@@ -203,49 +217,21 @@ Init <- function(sim) {
 
     demUrl <- "https://drive.google.com/file/d/13sGg1X9DEOSkedg1m0PxcdJiuBESk072/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1aO1nUnVrDqWkkDct05qfToay_1KL8P7Q/"
-    projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
-      "https://drive.google.com/file/d/1FTBVxphBHDPD6qt05Ay79mW3-EiMbu6C/"
-    } else if (P(sim)$climateSSP == 370) {
-      "https://drive.google.com/file/d/16J7bHD3jgZefA2sS6GzKlYEXxTBa_KX8/"
-    } else if (P(sim)$climateSSP == 585) {
-      "https://drive.google.com/file/d/1xjEmVCx1B-4zt6uiDVH6N4c0wUqC9-Hs/"
-    }
   } else if (grepl("AB", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "Alberta"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1g1SEU65zje6686pQXQzVVQQc44IXaznr/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1we9GqEVAORWLbHi3it66VnCcvLu85QIk/"
-    projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
-      "https://drive.google.com/file/d/1t66suhaHD7ePOagSO7VwyqNuAsqln5tD/"
-    } else if (P(sim)$climateSSP == 370) {
-      "https://drive.google.com/file/d/1HORzYTzhR1ICbKm_tM6vjzePWI684D52/"
-    } else if (P(sim)$climateSSP == 585) {
-      "https://drive.google.com/file/d/17Ol-1Ut1YX_MciDSnIkZwsEqq94rjfGm/"
-    }
   } else if (grepl("BC", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "British Columbia"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1DaAYFr0z38qmbZcz452QPMP_fzwUIqLD/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1usLRFsv2e4OkkfxKqZ7DA_7Go1CyvEUk/"
-    projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
-      "https://drive.google.com/file/d/1UQo62wCV3TJdV8zKGMg8rqtlIckPsqos/"
-    } else if (P(sim)$climateSSP == 370) {
-      "https://drive.google.com/file/d/1Nr5v1IK-wX7erJ4IBui2elwEusOBV2G2/"
-    } else if (P(sim)$climateSSP == 585) {
-      "https://drive.google.com/file/d/10id-iJyvYdIc85EwWJ0SYL5nRTsjQbp_/"
-    }
   } else if (grepl("MB", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "Manitoba"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1X7b2CE6QyCvik3UG9pUj6zc4b5UYZi8w/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1bywYpz5kF4KBJUjARTx4WLcFS5Sij74l/"
-    projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
-      "https://drive.google.com/file/d/1hauzy3WXzHrlbEc_FsdjVB0ZaDUZpeFb/"
-    } else if (P(sim)$climateSSP == 370) {
-      "https://drive.google.com/file/d/1GaC_4ws_LQ5cHKOJElxdtBuM6yohQUHE/"
-    } else if (P(sim)$climateSSP == 585) {
-      "https://drive.google.com/file/d/1ItKXfR8mEKcbgWIcdrhoG8Pgy7EAL-jm/"
-    }
   } else if (grepl("NT|NU", P(sim)$studyAreaName)) {
     ## NOTE: run NT and NU together!
     message("NWT and NU will both be run together as a single study area.")
@@ -253,37 +239,16 @@ Init <- function(sim) {
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 %in% c("Northwest Territories", "Nunavut"), ]
     demUrl <- "https://drive.google.com/file/d/13n8LjQJihy9kd3SniS91EuXunowbWOBa/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1rZDW2lB9jUZISsSmKEFQYJJlXik8qaXT/"
-    projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
-      "https://drive.google.com/file/d/1tXgQDJutWYHPwuNUMzbHK28Qn1SR05iC/"
-    } else if (P(sim)$climateSSP == 370) {
-      "https://drive.google.com/file/d/1prfyn7gyZQ5FWQvFaw7nHfgoa2m9YY33/"
-    } else if (P(sim)$climateSSP == 585) {
-      "https://drive.google.com/file/d/1Ob7qGMldjSQrAbQy-QIiIUg1-z98C1jS/"
-    }
   } else if (grepl("SK", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "Saskatchewan"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1CooPdqc3SlVVU7y_BaPfZD0OXt42fjBC/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1JikmJLdJhRsau3SysijLVQTAhkA6vtT8/"
-    projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
-      "https://drive.google.com/file/d/18g7yPwcUeBp9mpzQwv8QBmICRqtFTYn4/"
-    } else if (P(sim)$climateSSP == 370) {
-      "https://drive.google.com/file/d/1n9yCqSk2QVindyyisXTK6-m-i03UzT6O/"
-    } else if (P(sim)$climateSSP == 585) {
-      "https://drive.google.com/file/d/1bmBaBFs8yVTIcAuL2ZhnPUOmGoakCE0b/"
-    }
   } else if (grepl("YT", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "Yukon"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1CUMjLFGdGtwaQlErQ0Oq89ICUCcX641Q/"
     historicalClimateUrl <- "https://drive.google.com/file/d/1V8pMe2x-M36qoLpZuOlWlAsY4N9Gkm5X/"
-    projectedClimateUrl <- if (P(sim)$climateSSP == 245) {
-      "https://drive.google.com/file/d/1GGzORMtsxwUUwC9uBW9Hh4xNkdpRnaTn/"
-    } else if (P(sim)$climateSSP == 370) {
-      "https://drive.google.com/file/d/1wumRrz9GcsJ8P33UkmkL_d5sboLpLx1C/"
-    } else if (P(sim)$climateSSP == 585) {
-      "https://drive.google.com/file/d/1xe46diIGkah8X7AkmX1clmRwuGCIJjCh/"
-    }
   } else {
     stop("studyAreaName must be one of: ", paste(allowedStudyAreas, collapse = ", "))
   }
