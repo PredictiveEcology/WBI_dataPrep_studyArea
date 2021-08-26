@@ -117,7 +117,7 @@ Init <- function(sim) {
   }
 
   if (!P(sim)$climateSSP %in% c(245, 370, 585)) {
-    stop("Invalid SSP scenario for CanESM5 climate model.\n",
+    stop("Invalid SSP scenario for climate model ", P(sim)$climateGCM, ".\n",
          "climateSSP should be one of '245', '370', or '585'.")
   }
 
