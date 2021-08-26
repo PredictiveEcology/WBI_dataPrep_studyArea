@@ -330,7 +330,8 @@ Init <- function(sim) {
   projectedClimatePath <- checkPath(file.path(dPath, "climate", "future"), create = TRUE)
   projectedClimateArchive <- file.path(projectedClimatePath, paste0(studyAreaNameLong, ".zip"))
   projectedMDCfile <- file.path(projectedClimatePath,
-                                paste0("MDC_future_CanESM5_ssp", P(sim)$climateSSP, "_", studyAreaName, ".grd"))
+                                paste0("MDC_future_", P(sim)$climateGCM,
+                                       "_ssp", P(sim)$climateSSP, "_", studyAreaName, ".grd"))
 
   ## need to download and extract w/o prepInputs to preserve folder structure!
   if (!file.exists(projectedClimateArchive)) {
@@ -350,7 +351,9 @@ Init <- function(sim) {
                         filename2 = projectedMDCfile,
                         useCache = P(sim)$.useCache,
                         quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
-                        userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
+                        userTags = c(paste0("projMDC_", P(sim)$studyAreaName),
+                                     paste0("projMDC_", P(sim)$climateGCM),
+                                     paste0("projMDC_SSP", P(sim)$climateSSP), cacheTags))
 
   ## WARNING: names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad
   ##          |-> allows for index mismatching
