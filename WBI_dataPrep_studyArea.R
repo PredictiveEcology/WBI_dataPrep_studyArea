@@ -193,7 +193,7 @@ Init <- function(sim) {
   sim$sppEquiv <- sppEquiv[which(wbiSppToUse[, ..sAN][[1]]), ] ## subset per study area
   sim$sppEquivCol <- "LandR"
   rm(sppEquivalencies_CA)
-
+browser()
   ## lookup table to get projectedClimateURL based on studyArea, GCM, and SSP
   dt <- data.table::fread(file = file.path(dataPath(sim), "climateDataURLs.csv"))
   projectedClimateUrl <- dt[studyArea == studyAreaName &
@@ -328,7 +328,9 @@ Init <- function(sim) {
 
   ## FUTURE CLIMATE DATA
   projectedClimatePath <- checkPath(file.path(dPath, "climate", "future"), create = TRUE)
-  projectedClimateArchive <- file.path(projectedClimatePath, paste0(studyAreaNameLong, ".zip"))
+  projectedClimateArchive <- file.path(projectedClimatePath, paste0(studyAreaNameLong, "_",
+                                                                    P(sim)$climateGCM, "_ssp",
+                                                                    P(sim)$climateSSP, ".zip"))
   projectedMDCfile <- file.path(projectedClimatePath,
                                 paste0("MDC_future_", P(sim)$climateGCM,
                                        "_ssp", P(sim)$climateSSP, "_", studyAreaName, ".grd"))
