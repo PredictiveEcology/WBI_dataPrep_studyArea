@@ -327,11 +327,13 @@ Init <- function(sim) {
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
 
   ## FUTURE CLIMATE DATA
-  projectedClimatePath <- checkPath(file.path(dPath, "climate", "future"), create = TRUE)
-  projectedClimateArchive <- file.path(projectedClimatePath, paste0(studyAreaNameLong, "_",
-                                                                    P(sim)$climateGCM, "_ssp",
-                                                                    P(sim)$climateSSP, ".zip"))
-  projectedMDCfile <- file.path(projectedClimatePath,
+  projectedClimatePath <- checkPath(file.path(dPath, "climate", "future",
+                                              paste0(P(sim)$climateGCM, "_ssp", P(sim)$climateSSP)), create = TRUE)
+  projectedClimateArchive <- file.path(dirname(projectedClimatePath),
+                                       paste0(studyAreaNameLong, "_",
+                                              P(sim)$climateGCM, "_ssp",
+                                              P(sim)$climateSSP, ".zip"))
+  projectedMDCfile <- file.path(dirname(projectedClimatePath),
                                 paste0("MDC_future_", P(sim)$climateGCM,
                                        "_ssp", P(sim)$climateSSP, "_", studyAreaName, ".grd"))
 
