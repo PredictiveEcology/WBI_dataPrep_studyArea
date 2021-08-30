@@ -111,14 +111,14 @@ Init <- function(sim) {
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
-  if (!P(sim)$climateGCM %in% c("13GCMs_ensemble", "CanESM5")) {
+  if (!P(sim)$climateGCM %in% c("13GCMs_ensemble", "CanESM5", "CCSM4")) {
     stop("Invalid climate model specified.\n",
-         "climateGCM should be one of '13GCMs_ensemble' or 'CanESM5'.")
+         "climateGCM should be one of '13GCMs_ensemble', 'CanESM5', or 'CCSM4'.")
   }
 
-  if (!P(sim)$climateSSP %in% c(245, 370, 585)) {
+  if (!P(sim)$climateSSP %in% c(45, 85, 245, 370, 585)) {
     stop("Invalid SSP scenario for climate model ", P(sim)$climateGCM, ".\n",
-         "climateSSP should be one of '245', '370', or '585'.")
+         "climateSSP should be one of '245', '370', or '585' (or one of RCP '45' and '85').")
   }
 
   #### Prep study-area specific objects ####
