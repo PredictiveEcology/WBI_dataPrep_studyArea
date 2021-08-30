@@ -343,9 +343,8 @@ Init <- function(sim) {
   }
   archive::archive_extract(projectedClimateArchive, projectedClimatePath)
 
-  projectedMDC <- Cache(makeMDC,
-                        inputPath = file.path(projectedClimatePath, studyAreaNameLong),
-                        years = P(sim)$projectedFireYears)
+  projectedMDC <- makeMDC(inputPath = file.path(projectedClimatePath, studyAreaNameLong),
+                          years = P(sim)$projectedFireYears) ## TODO: Cache is getting confused
   projectedMDC <- Cache(postProcess,
                         projectedMDC,
                         rasterToMatch = sim$rasterToMatch,
