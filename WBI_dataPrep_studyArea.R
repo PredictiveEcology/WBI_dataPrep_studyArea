@@ -38,11 +38,12 @@ defineModule(sim, list(
                           "and time are not relevant")),
     defineParameter("bufferDist", "numeric", 20000, NA, NA,
                     "Distance (m) to buffer studyArea and rasterToMatch when creating 'Large' versions."),
-    defineParameter("climateGCM", "numeric", "13GCMs_ensemble", NA, NA,
+    defineParameter("climateGCM", "numeric", "CNRM-ESM2-1", NA, NA,
                     paste("Global Circulation Model to use for climate projections:",
-                          "currently '13GCMs_ensemble' or 'CanESM5'.")),
+                          "currently '13GCMs_ensemble', 'CanESM5', 'CNRM-ESM2-1', or 'CCSM4'.")),
     defineParameter("climateSSP", "numeric", 370, NA, NA,
-                    "SSP emissions scenario for `climateGCM`: one of 245, 370, or 585."),
+                    "SSP emissions scenario for `climateGCM`: one of 245, 370, or 585.",
+                    "[If using 'climateGCM = CCSM4', climateSSP must be one of 45 or 85.]"),
     defineParameter("historicalFireYears", "numeric", default = 1991:2020, NA, NA,
                     desc = "range of years captured by the historical climate data"),
     defineParameter("projectedFireYears", "numeric", default = 2011:2100, NA, NA,
@@ -111,9 +112,9 @@ Init <- function(sim) {
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
-  if (!P(sim)$climateGCM %in% c("13GCMs_ensemble", "CanESM5", "CCSM4")) {
+  if (!P(sim)$climateGCM %in% c("13GCMs_ensemble", "CanESM5", "CNRM-ESM2-1", "CCSM4")) {
     stop("Invalid climate model specified.\n",
-         "climateGCM should be one of '13GCMs_ensemble', 'CanESM5', or 'CCSM4'.")
+         "climateGCM should be one of '13GCMs_ensemble', 'CanESM5', 'CNRM-ESM2-1', or 'CCSM4'.")
   }
 
   if (!P(sim)$climateSSP %in% c(45, 85, 245, 370, 585)) {
