@@ -325,6 +325,8 @@ Init <- function(sim) {
   historicalMDC <- updateStackYearNames(historicalMDC, Par$historicalFireYears)
   #historicalMDC[] <- historicalMDC[] ## bring raster to memory
 
+  compareRaster(historicalMDC, sim$rasterToMatch)
+
   sim$historicalClimateRasters <- list("MDC" = historicalMDC)
 
   ## FUTURE CLIMATE DATA
