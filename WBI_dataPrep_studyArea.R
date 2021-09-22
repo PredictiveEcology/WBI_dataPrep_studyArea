@@ -70,8 +70,6 @@ defineModule(sim, list(
                   desc = "table of LandR species names equivalencies"),
     createsOutput("sppEquivCol", objectClass = "character",
                   desc = "name of column to use in sppEquiv"),
-    createsOutput("standAgeMap2011", objectClass = "RasterLayer",
-                  desc = "time since disturbance raster for year 2011"),
     createsOutput("studyArea", objectClass = "SpatialPolygonsDataFrame",
                   desc = "study area used for simulation (buffered to mitigate edge effects)"),
     createsOutput("studyAreaLarge", objectClass = "SpatialPolygonsDataFrame",
@@ -367,20 +365,6 @@ Init <- function(sim) {
   #projectedMDC[] <- projectedMDC[] ## bring raster to memory
 
   sim$projectedClimateRasters <- list("MDC" = projectedMDC)
-
-  sim$standAgeMap2011 <- Cache(
-    LandR::prepInputsStandAgeMap,
-    ageURL = paste0("https://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/",
-                    "canada-forests-attributes_attributs-forests-canada/",
-                    "2011-attributes_attributs-2011/",
-                    "NFI_MODIS250m_2011_kNN_Structure_Stand_Age_v1.tif"),
-    rasterToMatch = sim$rasterToMatchLarge,
-    studyArea = sim$studyAreaLarge,
-    destinationPath = dPath,
-    startTime = 2011,
-    filename2 = .suffix("standAgeMap_2011.tif", paste0("_", P(sim)$studyAreaName)),
-    userTags = c("prepInputsStandAgeMap", P(sim)$studyAreaname)
-  )
 
   return(invisible(sim))
 }
