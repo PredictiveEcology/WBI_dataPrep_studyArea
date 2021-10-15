@@ -79,10 +79,10 @@ defineModule(sim, list(
                   desc = "study area used for simulation (buffered to mitigate edge effects)"),
     createsOutput("studyAreaLarge", objectClass = "SpatialPolygonsDataFrame",
                   desc = "study area used for module parameterization (buffered)"),
-    expectsInput("studyAreaPSP", objectClass = "SpatialPolygonsDataFrame",
+    createsOutput("studyAreaPSP", objectClass = "SpatialPolygonsDataFrame",
                  desc = paste("this area will be used to subset PSP plots before building the statistical model.",
                               "Currently PSP datasets with repeat measures exist only for Saskatchewan,",
-                              "Alberta, and Boreal British Columbia"), sourceURL = NA),
+                              "Alberta, and Boreal British Columbia")),
     createsOutput("studyAreaReporting", objectClass = "SpatialPolygonsDataFrame",
                   desc = "study area used for reporting/post-processing")
   )
