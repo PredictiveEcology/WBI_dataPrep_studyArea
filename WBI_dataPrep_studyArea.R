@@ -54,6 +54,12 @@ defineModule(sim, list(
   inputObjects = bindrows(
   ),
   outputObjects = bindrows(
+    createsOutput("ATAstack", objectClass = "RasterStack",
+                  desc = "annual projected mean annual temperature anomalies, units stored as tenth of a degree"),
+    createsOutput("CMIstack", objectClass = "RasterStack",
+                  desc = "annual projected mean climate moisture deficit"),
+    createsOutput("CMInormal", objectClass = "RasterLayer",
+                  desc = "Climate Moisture Index Normals from 1950-2010"),
     createsOutput("historicalClimateRasters", objectClass = "list",
                   desc = "list of a single raster stack - historical MDC calculated from ClimateNA data"),
     createsOutput("projectedClimateRasters", objectClass = "list",
@@ -195,9 +201,11 @@ Init <- function(sim) {
 
   ## lookup table to get projectedClimateURL based on studyArea, GCM, and SSP
   dt <- data.table::fread(file = file.path(dataPath(sim), "climateDataURLs.csv"))
+  historicClimateURL <- dt[studyArea == studyAreaName & type == "hist_monthly", GID]
   projectedClimateUrl <- dt[studyArea == studyAreaName &
                               GCM == P(sim)$climateGCM &
-                              SSP == P(sim)$climateSSP, GID]
+                              SSP == P(sim)$climateSSP &
+                              type == "proj_monthly", GID]
 
   ## studyArea-specific shapefiles and rasters
   if (grepl("RIA", P(sim)$studyAreaName)) {
@@ -215,39 +223,32 @@ Init <- function(sim) {
       raster::aggregate(.)
 
     demUrl <- "https://drive.google.com/file/d/13sGg1X9DEOSkedg1m0PxcdJiuBESk072/"
-    historicalClimateUrl <- "https://drive.google.com/file/d/1aO1nUnVrDqWkkDct05qfToay_1KL8P7Q/"
   } else if (grepl("AB", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "Alberta"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1g1SEU65zje6686pQXQzVVQQc44IXaznr/"
-    historicalClimateUrl <- "https://drive.google.com/file/d/1we9GqEVAORWLbHi3it66VnCcvLu85QIk/"
   } else if (grepl("BC", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "British Columbia"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1DaAYFr0z38qmbZcz452QPMP_fzwUIqLD/"
-    historicalClimateUrl <- "https://drive.google.com/file/d/1usLRFsv2e4OkkfxKqZ7DA_7Go1CyvEUk/"
   } else if (grepl("MB", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "Manitoba"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1X7b2CE6QyCvik3UG9pUj6zc4b5UYZi8w/"
-    historicalClimateUrl <- "https://drive.google.com/file/d/1bywYpz5kF4KBJUjARTx4WLcFS5Sij74l/"
   } else if (grepl("NT|NU", P(sim)$studyAreaName)) {
     ## NOTE: run NT and NU together!
     message("NWT and NU will both be run together as a single study area.")
     studyAreaNameLong <- "Northwest Territories & Nunavut"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 %in% c("Northwest Territories", "Nunavut"), ]
     demUrl <- "https://drive.google.com/file/d/13n8LjQJihy9kd3SniS91EuXunowbWOBa/"
-    historicalClimateUrl <- "https://drive.google.com/file/d/1rZDW2lB9jUZISsSmKEFQYJJlXik8qaXT/"
   } else if (grepl("SK", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "Saskatchewan"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1CooPdqc3SlVVU7y_BaPfZD0OXt42fjBC/"
-    historicalClimateUrl <- "https://drive.google.com/file/d/1JikmJLdJhRsau3SysijLVQTAhkA6vtT8/"
   } else if (grepl("YT", P(sim)$studyAreaName)) {
     studyAreaNameLong <- "Yukon"
     sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1CUMjLFGdGtwaQlErQ0Oq89ICUCcX641Q/"
-    historicalClimateUrl <- "https://drive.google.com/file/d/1V8pMe2x-M36qoLpZuOlWlAsY4N9Gkm5X/"
   } else {
     stop("studyAreaName must be one of: ", paste(allowedStudyAreas, collapse = ", "))
   }
@@ -365,6 +366,51 @@ Init <- function(sim) {
   #projectedMDC[] <- projectedMDC[] ## bring raster to memory
 
   sim$projectedClimateRasters <- list("MDC" = projectedMDC)
+
+  ## CLIMATE DATA FOR gmcsDataPrep
+  ## 1) get and unzip normals and projected annual
+  ## 2) run makeLandRCS_1950_2010normals, it returns a raster stack with two layers, normal MAT, and normal CMI
+  ## 3) assign normal CMI to sim
+  ## 4) run makeLandRCS_projectedCMIandATA, with normal MAT as an input arg. It returns a list of raster stacks (projected ATA and CMI). Assign both to sim
+  ## 5) Profit
+
+  normalsClimateUrl <- dt[studyArea == studyAreaName & type == "hist_normals", GID]
+  normalsClimatePath <- checkPath(file.path(historicalClimatePath, "normals"), create = TRUE)
+  normalsClimateArchive <- file.path(normalsClimatePath, paste0(studyAreaNameLong, "_normals.zip"))
+
+  if (!file.exists(normalsClimateArchive)) {
+    ## need to download and extract w/o prepInputs to preserve folder structure!
+    googledrive::drive_download(file = as_id(normalsClimateUrl), path = normalsClimateArchive)
+  }
+  archive::archive_extract(normalsClimateArchive, normalsClimatePath)
+
+  normals <- Cache(makeLandRCS_1950_2010_normals,
+                   pathToNormalRasters = file.path(normalsClimatePath, studyAreaNameLong),
+                   rasterToMatch = sim$rasterToMatch)
+  sim$CMInormal <- normals[["CMInormal"]]
+
+  projAnnualClimateUrl <- dt[studyArea == studyAreaName &
+                               GCM == P(sim)$climateGCM &
+                               SSP == P(sim)$climateSSP &
+                               type == "proj_annual", GID]
+  projAnnualClimatePath <- checkPath(file.path(projectedClimatePath, "annual"), create = TRUE)
+  projAnnualClimateArchive <- file.path(dirname(projAnnualClimatePath),
+                                        paste0(studyAreaNameLong, "_",
+                                               P(sim)$climateGCM, "_ssp",
+                                               P(sim)$climateSSP, "_annual.zip"))
+
+  if (!file.exists(projAnnualClimateArchive)) {
+    ## need to download and extract w/o prepInputs to preserve folder structure!
+    googledrive::drive_download(file = as_id(projAnnualClimateUrl), path = projAnnualClimateArchive)
+  }
+  archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
+
+  projCMIATA <- Cache(makeLandRCS_projectedCMIandATA,
+                      normalMAT = normals[["MATnormal"]],
+                      pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
+                      years = P(sim)$projectedFireYears) ## TODO: this is very RAM heavy -- use GDAL?
+  sim$ATAstack <- projCMIATA[["projectedATA"]]
+  sim$CMIstack <- projCMIATA[["projectedCMI"]]
 
   return(invisible(sim))
 }
