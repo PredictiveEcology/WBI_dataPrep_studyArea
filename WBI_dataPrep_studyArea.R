@@ -303,8 +303,8 @@ Init <- function(sim) {
   ## need to download and extract w/o prepInputs to preserve folder structure!
   if (!file.exists(historicalClimateArchive)) {
     googledrive::drive_download(file = as_id(historicalClimateUrl), path = historicalClimateArchive)
+    archive::archive_extract(historicalClimateArchive, historicalClimatePath)
   }
-  archive::archive_extract(historicalClimateArchive, historicalClimatePath)
 
   historicalMDC <- Cache(makeMDC,
                          inputPath = file.path(historicalClimatePath, studyAreaNameLong),
@@ -345,8 +345,8 @@ Init <- function(sim) {
   ## need to download and extract w/o prepInputs to preserve folder structure!
   if (!file.exists(projectedClimateArchive)) {
     googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
+    archive::archive_extract(projectedClimateArchive, projectedClimatePath)
   }
-  archive::archive_extract(projectedClimateArchive, projectedClimatePath)
 
   projectedMDC <- makeMDC(inputPath = file.path(projectedClimatePath, studyAreaNameLong),
                           years = P(sim)$projectedFireYears) ## TODO: Cache is getting confused
@@ -384,8 +384,8 @@ Init <- function(sim) {
   if (!file.exists(normalsClimateArchive)) {
     ## need to download and extract w/o prepInputs to preserve folder structure!
     googledrive::drive_download(file = as_id(normalsClimateUrl), path = normalsClimateArchive)
+    archive::archive_extract(normalsClimateArchive, normalsClimatePath)
   }
-  archive::archive_extract(normalsClimateArchive, normalsClimatePath)
 
   normals <- Cache(makeLandRCS_1950_2010_normals,
                    pathToNormalRasters = file.path(normalsClimatePath, studyAreaNameLong),
@@ -405,8 +405,8 @@ Init <- function(sim) {
   if (!file.exists(projAnnualClimateArchive)) {
     ## need to download and extract w/o prepInputs to preserve folder structure!
     googledrive::drive_download(file = as_id(projAnnualClimateUrl), path = projAnnualClimateArchive)
+    archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
   }
-  archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
 
   projCMIATA <- Cache(makeLandRCS_projectedCMIandATA,
                       normalMAT = normals[["MATnormal"]],
