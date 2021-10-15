@@ -80,6 +80,10 @@ defineModule(sim, list(
                   desc = "study area used for simulation (buffered to mitigate edge effects)"),
     createsOutput("studyAreaLarge", objectClass = "SpatialPolygonsDataFrame",
                   desc = "study area used for module parameterization (buffered)"),
+    expectsInput(objectName = "studyAreaPSP", objectClass = "SpatialPolygonsDataFrame",
+                 desc = paste("this area will be used to subset PSP plots before building the statistical model.",
+                              "Currently PSP datasets with repeat measures exist only for Saskatchewan,",
+                              "Alberta, and Boreal British Columbia"), sourceURL = NA),
     createsOutput("studyAreaReporting", objectClass = "SpatialPolygonsDataFrame",
                   desc = "study area used for reporting/post-processing")
   )
@@ -411,6 +415,45 @@ Init <- function(sim) {
                       years = P(sim)$projectedFireYears) ## TODO: this is very RAM heavy -- use GDAL?
   sim$ATAstack <- projCMIATA[["projectedATA"]]
   sim$CMIstack <- projCMIATA[["projectedCMI"]]
+
+  ## only use ecozones in the WBI study area
+  ecozonesToUse <- c(
+    "Boreal Cordillera", "Boreal PLain", "Boreal Shield", "Hudson Plain",
+    "Southern Arctic", "Taiga Cordillera", "Taiga Plain", "Taiga Shield"
+  )
+
+  ## ecozone boundaries within WBI
+  ecozones_WB <- Cache(prepInputs,
+                       targetFile = "ecozones.shp",
+                       archive = asPath("ecozone_shp.zip"),
+                       url = "https://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip",
+                       alsoExtract = "similar",
+                       destinationPath = dPath,
+                       filename2 = NULL,
+                       studyArea = WBstudyArea,
+                       overwrite = TRUE,
+                       useSAcrs = TRUE,
+                       fun = "sf::st_read",
+                       userTags = c("prepInputsEcozones", currentModule(sim), cacheTags))
+  ecozones_WB <- ecozones_WB[ecozones_WB$ZONE_NAME %in% ecozonesToUse, ] ## remove boundary artifacts
+
+  ## ecozone boundaries current study area
+  ecozones_SA <- Cache(prepInputs,
+                       targetFile = "ecozones.shp",
+                       archive = asPath("ecozone_shp.zip"),
+                       url = "https://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip",
+                       alsoExtract = "similar",
+                       destinationPath = dPath,
+                       filename2 = NULL,
+                       studyArea = sim$studyAreaReporting,
+                       overwrite = TRUE,
+                       useSAcrs = TRUE,
+                       fun = "sf::st_read",
+                       userTags = c("prepInputsEcozones", currentModule(sim), cacheTags))
+  ecozones_SA <- ecozones_SA[ecozones_SA$ZONE_NAME %in% ecozonesToUse, ] ## remove boundary artifacts
+
+  ## use ecozone boundaries within WBI study area for parameterizing PSP for current study area
+  sim$studyAreaPSP <- ecozones_WB[ecozones_WB$ZONE_NAME %in% ecozones_SA$ZONE_NAME, ] %>% as_Spatial()
 
   return(invisible(sim))
 }
