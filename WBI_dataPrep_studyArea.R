@@ -20,7 +20,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development (>= 1.2.6.9008)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
                   "PredictiveEcology/LandR@development",
-                  "PredictiveEcology/climateData@development"),
+                  "PredictiveEcology/climateData@development (>= 0.0.0.0.9002)"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
@@ -204,7 +204,7 @@ Init <- function(sim) {
 
   ## lookup table to get projectedClimateURL based on studyArea, GCM, and SSP
   dt <- data.table::fread(file = file.path(dataPath(sim), "climateDataURLs.csv"))
-  historicClimateURL <- dt[studyArea == studyAreaName & type == "hist_monthly", GID]
+  historicalClimateURL <- dt[studyArea == studyAreaName & type == "hist_monthly", GID]
   projectedClimateUrl <- dt[studyArea == studyAreaName &
                               GCM == P(sim)$climateGCM &
                               SSP == P(sim)$climateSSP &
@@ -411,7 +411,8 @@ Init <- function(sim) {
   projCMIATA <- Cache(makeLandRCS_projectedCMIandATA,
                       normalMAT = normals[["MATnormal"]],
                       pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
-                      years = P(sim)$projectedFireYears) ## TODO: this is very RAM heavy -- use GDAL?
+                      years = P(sim)$projectedFireYears,
+                      useCache = TRUE) ## TODO: this is very RAM heavy -- use GDAL?
   sim$ATAstack <- projCMIATA[["projectedATA"]]
   sim$CMIstack <- projCMIATA[["projectedCMI"]]
 
