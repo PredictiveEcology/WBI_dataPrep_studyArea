@@ -302,7 +302,7 @@ Init <- function(sim) {
 
   ## need to download and extract w/o prepInputs to preserve folder structure!
   if (!file.exists(historicalClimateArchive)) {
-    googledrive::drive_download(file = as_id(historicalClimateUrl), path = historicalClimateArchive)
+    googledrive::drive_download(file = as_id(historicalClimateURL), path = historicalClimateArchive)
     archive::archive_extract(historicalClimateArchive, historicalClimatePath)
   }
 
