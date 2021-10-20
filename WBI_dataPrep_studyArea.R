@@ -308,7 +308,7 @@ Init <- function(sim) {
 
   historicalMDC <- Cache(
     makeMDC,
-    inputPath = checkPath(file.path(historicalClimatePath, studyAreaNameLong), create = TRUE),
+    inputPath = file.path(historicalClimatePath, studyAreaNameLong),
     years = P(sim)$historicalFireYears
   )
   historicalMDC <- Cache(
@@ -353,7 +353,7 @@ Init <- function(sim) {
   }
 
   projectedMDC <- makeMDC(  ## TODO: use Cache, but it's getting confused :S
-    inputPath = checkPath(file.path(projectedClimatePath, studyAreaNameLong), create = TRUE),
+    inputPath = file.path(projectedClimatePath, studyAreaNameLong),
     years = P(sim)$projectedFireYears
   )
   projectedMDC <- Cache(
