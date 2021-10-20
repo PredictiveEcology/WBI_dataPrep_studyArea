@@ -306,19 +306,23 @@ Init <- function(sim) {
     archive::archive_extract(historicalClimateArchive, historicalClimatePath)
   }
 
-  historicalMDC <- Cache(makeMDC,
-                         inputPath = file.path(historicalClimatePath, studyAreaNameLong),
-                         years = P(sim)$historicalFireYears)
-  historicalMDC <- Cache(postProcess,
-                         historicalMDC,
-                         rasterToMatch = sim$rasterToMatch,
-                         studyArea = sim$studyArea,
-                         datatype = "INT2U",
-                         method = "bilinear",
-                         filename2 = historicalMDCfile,
-                         useCache = P(sim)$.useCache,
-                         quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
-                         userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags))
+  historicalMDC <- Cache(
+    makeMDC,
+    inputPath = checkPath(file.path(historicalClimatePath, studyAreaNameLong), create = TRUE),
+    years = P(sim)$historicalFireYears
+  )
+  historicalMDC <- Cache(
+    postProcess,
+    historicalMDC,
+    rasterToMatch = sim$rasterToMatch,
+    studyArea = sim$studyArea,
+    datatype = "INT2U",
+    method = "bilinear",
+    filename2 = historicalMDCfile,
+    useCache = P(sim)$.useCache,
+    quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
+    userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags)
+  )
 
   ## The names need "year" at the start, because not every year will have fires (data issue in RIA),
   ## so fireSense matches fires + climate rasters by year.
@@ -348,20 +352,24 @@ Init <- function(sim) {
     archive::archive_extract(projectedClimateArchive, projectedClimatePath)
   }
 
-  projectedMDC <- makeMDC(inputPath = file.path(projectedClimatePath, studyAreaNameLong),
-                          years = P(sim)$projectedFireYears) ## TODO: Cache is getting confused
-  projectedMDC <- Cache(postProcess,
-                        projectedMDC,
-                        rasterToMatch = sim$rasterToMatch,
-                        studyArea = sim$studyArea,
-                        datatype = "INT2U",
-                        method = "bilinear",
-                        filename2 = projectedMDCfile,
-                        useCache = P(sim)$.useCache,
-                        quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
-                        userTags = c(paste0("projMDC_", P(sim)$studyAreaName),
-                                     paste0("projMDC_", P(sim)$climateGCM),
-                                     paste0("projMDC_SSP", P(sim)$climateSSP), cacheTags))
+  projectedMDC <- makeMDC(  ## TODO: use Cache, but it's getting confused :S
+    inputPath = checkPath(file.path(projectedClimatePath, studyAreaNameLong), create = TRUE),
+    years = P(sim)$projectedFireYears
+  )
+  projectedMDC <- Cache(
+    postProcess,
+    projectedMDC,
+    rasterToMatch = sim$rasterToMatch,
+    studyArea = sim$studyArea,
+    datatype = "INT2U",
+    method = "bilinear",
+    filename2 = projectedMDCfile,
+    useCache = P(sim)$.useCache,
+    quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
+    userTags = c(paste0("projMDC_", P(sim)$studyAreaName),
+                 paste0("projMDC_", P(sim)$climateGCM),
+                 paste0("projMDC_SSP", P(sim)$climateSSP), cacheTags)
+  )
 
   ## WARNING: names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad
   ##          |-> allows for index mismatching
