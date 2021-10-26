@@ -133,6 +133,7 @@ Init <- function(sim) {
   ## when adding study areas, add relevant climate urls, rtm and sa, and don't forget R script prepSppEquiv
   allowedStudyAreas <- c("AB", "BC", "MB", "NT", "NU", "SK", "YT", ## prov/terr x BCR intersections
                          "RIA") ## custom boundaries
+
   provs <- c("British Columbia", "Alberta", "Saskatchewan", "Manitoba")
   terrs <- c("Yukon", "Northwest Territories", "Nunavut")
   WB <- c(provs, terrs)
@@ -309,7 +310,8 @@ Init <- function(sim) {
   historicalMDC <- Cache(
     makeMDC,
     inputPath = file.path(historicalClimatePath, studyAreaNameLong),
-    years = P(sim)$historicalFireYears
+    years = P(sim)$historicalFireYears,
+    quick = "inputPath"
   )
   historicalMDC <- Cache(
     postProcess,
@@ -352,9 +354,11 @@ Init <- function(sim) {
     archive::archive_extract(projectedClimateArchive, projectedClimatePath)
   }
 
-  projectedMDC <- makeMDC(  ## TODO: use Cache, but it's getting confused :S
+  projectedMDC <- Cache(
+    makeMDC,
     inputPath = file.path(projectedClimatePath, studyAreaNameLong),
-    years = P(sim)$projectedFireYears
+    years = P(sim)$projectedFireYears,
+    quick = "inputPath"
   )
   projectedMDC <- Cache(
     postProcess,
