@@ -37,7 +37,7 @@ defineModule(sim, list(
                           "and time are not relevant")),
     defineParameter("bufferDist", "numeric", 20000, NA, NA,
                     "Distance (m) to buffer studyArea and rasterToMatch when creating 'Large' versions."),
-    defineParameter("climateGCM", "numeric", "CNRM-ESM2-1", NA, NA,
+    defineParameter("climateGCM", "character", "CNRM-ESM2-1", NA, NA,
                     paste("Global Circulation Model to use for climate projections:",
                           "currently '13GCMs_ensemble', 'CanESM5', 'CNRM-ESM2-1', or 'CCSM4'.")),
     defineParameter("climateSSP", "numeric", 370, NA, NA,
