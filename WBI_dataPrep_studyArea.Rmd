@@ -2,13 +2,16 @@
 title: "WBI_dataPrep_studyArea"
 author: ""
 date: "21 September 2020"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
+    keep_md: yes
 editor_options:
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, results = "hold")
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, warning = FALSE, results = "hold")
 ```
 
 # Overview
@@ -26,9 +29,11 @@ For help writing in R Markdown, see https://rmarkdown.rstudio.com/.
 
 # Usage
 
-```{r module_usage}
+```{r load-libraries, eval = TRUE}
 library(SpaDES.core)
+```
 
+```{r module_usage}
 setPaths(modulePath = file.path('../'),
          inputPath = "data")
 paths <- getPaths() # shows where the 4 relevant paths are
@@ -58,8 +63,8 @@ mySimOut <- spades(mySim)
 
 Provide a summary of user-visible parameters.
 
-```{r moduleParams, echo = FALSE}
-df_params <- moduleParams("WBI_dataPrep_studyArea", "C:/Ian/Git")
+```{r moduleParams, echo = FALSE, eval = TRUE}
+df_params <- moduleParams("WBI_dataPrep_studyArea", "..")
 knitr::kable(df_params)
 ```
 
@@ -80,10 +85,10 @@ Write what is saved.
 ## Input data
 
 How to obtain input data, and a description of the data required by the module.
-If `sourceURL` is specified, `downloadData("WBI_dataPrep_studyArea", "C:/Ian/Git")` may be sufficient.
+If `sourceURL` is specified, `downloadData("WBI_dataPrep_studyArea", "..")` may be sufficient.
 
-```{r moduleInputs, echo = FALSE}
-df_inputs <- moduleInputs("WBI_dataPrep_studyArea", "C:/Ian/Git")
+```{r moduleInputs, echo = FALSE, eval = TRUE}
+df_inputs <- moduleInputs("WBI_dataPrep_studyArea", "..")
 knitr::kable(df_inputs)
 ```
 
@@ -92,7 +97,7 @@ knitr::kable(df_inputs)
 Description of the module outputs.
 
 ```{r moduleOutputs, echo = FALSE}
-df_outputs <- moduleOutputs("WBI_dataPrep_studyArea", "C:/Ian/Git")
+df_outputs <- moduleOutputs("WBI_dataPrep_studyArea", "..")
 knitr::kable(df_outputs)
 ```
 
