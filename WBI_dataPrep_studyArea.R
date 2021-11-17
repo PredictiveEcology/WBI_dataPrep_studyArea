@@ -51,6 +51,15 @@ defineModule(sim, list(
                     paste("study area name for WB project - one of BC, AB, SK, YK, NWT, MB, or RIA"))
   ),
   inputObjects = bindrows(
+    expectsInput("studyArea", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "study area used for simulation (buffered to mitigate edge effects)",
+                 sourceURL = NA),
+    expectsInput("studyAreaLarge", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "study area used for module parameterization (buffered)",
+                 sourceURL = NA),
+    expectsInput("studyAreaReporting", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "study area used for reporting/post-processing",
+                 sourceURL = NA)
   ),
   outputObjects = bindrows(
     createsOutput("ATAstack", objectClass = "RasterStack",
@@ -75,16 +84,10 @@ defineModule(sim, list(
                   desc = "table of LandR species names equivalencies"),
     createsOutput("sppEquivCol", objectClass = "character",
                   desc = "name of column to use in sppEquiv"),
-    createsOutput("studyArea", objectClass = "SpatialPolygonsDataFrame",
-                  desc = "study area used for simulation (buffered to mitigate edge effects)"),
-    createsOutput("studyAreaLarge", objectClass = "SpatialPolygonsDataFrame",
-                  desc = "study area used for module parameterization (buffered)"),
     createsOutput("studyAreaPSP", objectClass = "SpatialPolygonsDataFrame",
                  desc = paste("this area will be used to subset PSP plots before building the statistical model.",
                               "Currently PSP datasets with repeat measures exist only for Saskatchewan,",
-                              "Alberta, and Boreal British Columbia")),
-    createsOutput("studyAreaReporting", objectClass = "SpatialPolygonsDataFrame",
-                  desc = "study area used for reporting/post-processing")
+                              "Alberta, and Boreal British Columbia"))
   )
 ))
 
@@ -129,59 +132,6 @@ Init <- function(sim) {
          "climateSSP should be one of '245', '370', or '585' (or one of RCP '45' and '85').")
   }
 
-  #### Prep study-area specific objects ####
-  ## when adding study areas, add relevant climate urls, rtm and sa, and don't forget R script prepSppEquiv
-  allowedStudyAreas <- c("AB", "BC", "MB", "NT", "NU", "SK", "YT", ## prov/terr x BCR intersections
-                         "RIA") ## custom boundaries
-
-  provs <- c("British Columbia", "Alberta", "Saskatchewan", "Manitoba")
-  terrs <- c("Yukon", "Northwest Territories", "Nunavut")
-  WB <- c(provs, terrs)
-
-  targetCRS <- paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
-                     "+x_0=0 +y_0=0 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
-
-  bcrzip <- "https://www.birdscanada.org/download/gislab/bcr_terrestrial_shape.zip"
-
-  bcrshp <- Cache(prepInputs,
-                  url = bcrzip,
-                  destinationPath = dPath,
-                  targetCRS = targetCRS,
-                  useCache = P(sim)$.useCache,
-                  fun = "sf::st_read")
-
-  if (packageVersion("reproducible") >= "1.2.5") {
-    fn1 <- function(x) {
-      x <- readRDS(x)
-      x <- st_as_sf(x)
-      st_transform(x, targetCRS)
-    }
-  } else {
-    fn1 <- "readRDS"
-  }
-  canProvs <- Cache(prepInputs,
-                    "GADM",
-                    #fun = "base::readRDS",
-                    fun = fn1,
-                    dlFun = "raster::getData",
-                    country = "CAN", level = 1, path = dPath,
-                    #targetCRS = targetCRS, ## TODO: fails on Windows
-                    targetFile = "gadm36_CAN_1_sp.rds", ## TODO: this will change as GADM data update
-                    destinationPath = dPath,
-                    useCache = P(sim)$.useCache) #%>%
-  if (packageVersion("reproducible") < "1.2.5") {
-    canProvs <- st_as_sf(canProvs) %>%
-      st_transform(., targetCRS)
-  }
-
-  bcrWB <- bcrshp[bcrshp$BCR %in% c(4, 6:8), ]
-  provsWB <- canProvs[canProvs$NAME_1 %in% WB, ]
-
-  WBstudyArea <- Cache(postProcess, provsWB, studyArea = bcrWB, useSAcrs = TRUE,
-                       useCache = P(sim)$.useCache,
-                       filename2 = NULL, overwrite = TRUE) %>%
-    as_Spatial(.)
-
   ## all species considered in western boreal (will be subset later)
   data("sppEquivalencies_CA", package = "LandR", envir = environment())
   allWBIspp <- c("Abie_Bal", "Abie_Las", "Betu_Pap", "Lari_Lar",
@@ -212,63 +162,29 @@ Init <- function(sim) {
                               type == "proj_monthly", GID]
 
   ## studyArea-specific shapefiles and rasters
-  if (grepl("RIA", P(sim)$studyAreaName)) {
-    studyAreaUrl <- "https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/"
-    ## originally, I thought this could be defined after the IF clause as Eliot suggested.
-    ## But if RIA SA = SAL, or RTM = RTML, it falls apart.
-    studyAreaNameLong <- "RIA"
-    sim$studyArea <- Cache(prepInputs, url = studyAreaUrl,
-                           destinationPath = dPath,
-                           userTags = c("studyArea", cacheTags)) %>%
-      sf::st_as_sf(.) %>%
-      .[.$TSA_NUMBER %in% c("40", "08", "41", "24", "16"),] %>%
-      sf::st_buffer(., 0) %>%
-      sf::as_Spatial(.) %>%
-      raster::aggregate(.)
+  allowedStudyAreas <- c("AB", "BC", "MB", "NT", "NU", "SK", "YT", ## prov/terr x BCR intersections
+                         "RIA") ## custom boundaries
 
+  if (grepl("RIA", P(sim)$studyAreaName)) {
     demUrl <- "https://drive.google.com/file/d/13sGg1X9DEOSkedg1m0PxcdJiuBESk072/"
   } else if (grepl("AB", P(sim)$studyAreaName)) {
-    studyAreaNameLong <- "Alberta"
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1g1SEU65zje6686pQXQzVVQQc44IXaznr/"
   } else if (grepl("BC", P(sim)$studyAreaName)) {
-    studyAreaNameLong <- "British Columbia"
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1DaAYFr0z38qmbZcz452QPMP_fzwUIqLD/"
   } else if (grepl("MB", P(sim)$studyAreaName)) {
-    studyAreaNameLong <- "Manitoba"
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1X7b2CE6QyCvik3UG9pUj6zc4b5UYZi8w/"
   } else if (grepl("NT|NU", P(sim)$studyAreaName)) {
     ## NOTE: run NT and NU together!
-    message("NWT and NU will both be run together as a single study area.")
-    studyAreaNameLong <- "Northwest Territories & Nunavut"
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 %in% c("Northwest Territories", "Nunavut"), ]
     demUrl <- "https://drive.google.com/file/d/13n8LjQJihy9kd3SniS91EuXunowbWOBa/"
   } else if (grepl("SK", P(sim)$studyAreaName)) {
-    studyAreaNameLong <- "Saskatchewan"
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1CooPdqc3SlVVU7y_BaPfZD0OXt42fjBC/"
   } else if (grepl("YT", P(sim)$studyAreaName)) {
-    studyAreaNameLong <- "Yukon"
-    sim$studyArea <- WBstudyArea[WBstudyArea$NAME_1 == studyAreaNameLong, ]
     demUrl <- "https://drive.google.com/file/d/1CUMjLFGdGtwaQlErQ0Oq89ICUCcX641Q/"
   } else {
     stop("studyAreaName must be one of: ", paste(allowedStudyAreas, collapse = ", "))
   }
 
-  sim$studyArea <- spTransform(sim$studyArea, targetCRS)
   sim$studyArea$studyAreaName <- P(sim)$studyAreaName  # makes it a data.frame
-  sim$studyAreaReporting <- sim$studyArea
-
-  if (grepl("RIA", P(sim)$studyAreaName)) {
-    ## NOTE: RIA uses the same unbuffered studyArea for parameterization, sims, and reporting
-    sim$studyAreaLarge <- sim$studyArea
-  } else {
-    ## NOTE: studyArea and studyAreaLarge are the same [buffered] area
-    sim$studyArea <- buffer(sim$studyArea, P(sim)$bufferDist)
-    sim$studyAreaLarge <- sim$studyArea
-  }
 
   sim$rasterToMatch <- Cache(LandR::prepInputsLCC,
                              year = 2005,
@@ -298,7 +214,7 @@ Init <- function(sim) {
 
   ## HISTORIC CLIMATE DATA
   historicalClimatePath <- checkPath(file.path(dPath, "climate", "historic"), create = TRUE)
-  historicalClimateArchive <- file.path(historicalClimatePath, paste0(studyAreaNameLong, ".zip"))
+  historicalClimateArchive <- file.path(historicalClimatePath, paste0(mod$studyAreaNameLong, ".zip"))
   historicalMDCfile <- file.path(historicalClimatePath, paste0("MDC_historical_", studyAreaName, ".grd"))
 
   ## need to download and extract w/o prepInputs to preserve folder structure!
@@ -309,7 +225,7 @@ Init <- function(sim) {
 
   historicalMDC <- Cache(
     makeMDC,
-    inputPath = file.path(historicalClimatePath, studyAreaNameLong),
+    inputPath = file.path(historicalClimatePath, mod$studyAreaNameLong),
     years = P(sim)$historicalFireYears,
     quick = "inputPath"
   )
@@ -341,7 +257,7 @@ Init <- function(sim) {
   projectedClimatePath <- checkPath(file.path(dPath, "climate", "future",
                                               paste0(P(sim)$climateGCM, "_ssp", P(sim)$climateSSP)), create = TRUE)
   projectedClimateArchive <- file.path(dirname(projectedClimatePath),
-                                       paste0(studyAreaNameLong, "_",
+                                       paste0(mod$studyAreaNameLong, "_",
                                               P(sim)$climateGCM, "_ssp",
                                               P(sim)$climateSSP, ".zip"))
   projectedMDCfile <- file.path(dirname(projectedClimatePath),
@@ -356,7 +272,7 @@ Init <- function(sim) {
 
   projectedMDC <- Cache(
     makeMDC,
-    inputPath = file.path(projectedClimatePath, studyAreaNameLong),
+    inputPath = file.path(projectedClimatePath, mod$studyAreaNameLong),
     years = P(sim)$projectedFireYears,
     quick = "inputPath"
   )
@@ -391,7 +307,7 @@ Init <- function(sim) {
 
   normalsClimateUrl <- dt[studyArea == studyAreaName & type == "hist_normals", GID]
   normalsClimatePath <- checkPath(file.path(historicalClimatePath, "normals"), create = TRUE)
-  normalsClimateArchive <- file.path(normalsClimatePath, paste0(studyAreaNameLong, "_normals.zip"))
+  normalsClimateArchive <- file.path(normalsClimatePath, paste0(mod$studyAreaNameLong, "_normals.zip"))
 
   if (!file.exists(normalsClimateArchive)) {
     ## need to download and extract w/o prepInputs to preserve folder structure!
@@ -400,7 +316,7 @@ Init <- function(sim) {
   }
 
   normals <- Cache(makeLandRCS_1950_2010_normals,
-                   pathToNormalRasters = file.path(normalsClimatePath, studyAreaNameLong),
+                   pathToNormalRasters = file.path(normalsClimatePath, mod$studyAreaNameLong),
                    rasterToMatch = sim$rasterToMatch)
   sim$CMInormal <- normals[["CMInormal"]]
 
@@ -410,7 +326,7 @@ Init <- function(sim) {
                                type == "proj_annual", GID]
   projAnnualClimatePath <- checkPath(file.path(projectedClimatePath, "annual"), create = TRUE)
   projAnnualClimateArchive <- file.path(dirname(projAnnualClimatePath),
-                                        paste0(studyAreaNameLong, "_",
+                                        paste0(mod$studyAreaNameLong, "_",
                                                P(sim)$climateGCM, "_ssp",
                                                P(sim)$climateSSP, "_annual.zip"))
 
@@ -422,7 +338,7 @@ Init <- function(sim) {
 
   projCMIATA <- Cache(makeLandRCS_projectedCMIandATA,
                       normalMAT = normals[["MATnormal"]],
-                      pathToFutureRasters = file.path(projAnnualClimatePath, studyAreaNameLong),
+                      pathToFutureRasters = file.path(projAnnualClimatePath, mod$studyAreaNameLong),
                       years = P(sim)$projectedFireYears,
                       useCache = TRUE) ## TODO: this is very RAM heavy -- use GDAL?
   sim$ATAstack <- projCMIATA[["projectedATA"]]
@@ -442,7 +358,7 @@ Init <- function(sim) {
                        alsoExtract = "similar",
                        destinationPath = dPath,
                        filename2 = NULL,
-                       studyArea = WBstudyArea,
+                       studyArea = mod$WBstudyArea,
                        overwrite = TRUE,
                        useSAcrs = TRUE,
                        fun = "sf::st_read",
@@ -476,6 +392,109 @@ Init <- function(sim) {
   message(currentModule(sim), ": using dataPath '", dPath, "'.")
 
   # ! ----- EDIT BELOW ----- ! #
+
+  mod$studyAreaNameLong <- switch(P(sim)$studyAreaName,
+                                  AB = "Alberta",
+                                  BC = "british Columbia",
+                                  SK = "Saskatchewan",
+                                  MB = "Manitoba",
+                                  NT = "Northwest Territories & Nunavut",
+                                  NU = "Northwest Territories & Nunavut",
+                                  YT = "Yukon",
+                                  RIA = "RIA")
+
+  mod$targetCRS <- paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
+                         "+x_0=0 +y_0=0 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
+
+  if (!suppliedElsewhere("studyArea", sim)) {
+    #### Prep study-area specific objects ####
+    ## when adding study areas, add relevant climate urls, rtm and sa, and don't forget R script prepSppEquiv
+
+    provs <- c("British Columbia", "Alberta", "Saskatchewan", "Manitoba")
+    terrs <- c("Yukon", "Northwest Territories", "Nunavut")
+    WB <- c(provs, terrs)
+
+    bcrzip <- "https://www.birdscanada.org/download/gislab/bcr_terrestrial_shape.zip"
+
+    bcrshp <- Cache(prepInputs,
+                    url = bcrzip,
+                    destinationPath = dPath,
+                    targetCRS = mod$targetCRS,
+                    useCache = P(sim)$.useCache,
+                    fun = "sf::st_read")
+
+    if (packageVersion("reproducible") >= "1.2.5") {
+      fn1 <- function(x) {
+        x <- readRDS(x)
+        x <- st_as_sf(x)
+        st_transform(x, mod$targetCRS)
+      }
+    } else {
+      fn1 <- "readRDS"
+    }
+    canProvs <- Cache(prepInputs,
+                      "GADM",
+                      #fun = "base::readRDS",
+                      fun = fn1,
+                      dlFun = "raster::getData",
+                      country = "CAN", level = 1, path = dPath,
+                      #targetCRS = mod$targetCRS, ## TODO: fails on Windows
+                      targetFile = "gadm36_CAN_1_sp.rds", ## TODO: this will change as GADM data update
+                      destinationPath = dPath,
+                      useCache = P(sim)$.useCache) #%>%
+    if (packageVersion("reproducible") < "1.2.5") {
+      canProvs <- st_as_sf(canProvs) %>%
+        st_transform(., mod$targetCRS)
+    }
+
+    bcrWB <- bcrshp[bcrshp$BCR %in% c(4, 6:8), ]
+    provsWB <- canProvs[canProvs$NAME_1 %in% WB, ]
+
+    mod$WBstudyArea <- Cache(postProcess, provsWB, studyArea = bcrWB, useSAcrs = TRUE,
+                             useCache = P(sim)$.useCache,
+                             filename2 = NULL, overwrite = TRUE) %>%
+      as_Spatial(.)
+
+    if (grepl("RIA", P(sim)$studyAreaName)) {
+      studyAreaUrl <- "https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/"
+      ## originally, I thought this could be defined after the IF clause as Eliot suggested.
+      ## But if RIA SA = SAL, or RTM = RTML, it falls apart.
+      sim$studyArea <- Cache(prepInputs, url = studyAreaUrl,
+                             destinationPath = dPath,
+                             userTags = c("studyArea", cacheTags)) %>%
+        sf::st_as_sf(.) %>%
+        .[.$TSA_NUMBER %in% c("40", "08", "41", "24", "16"),] %>%
+        sf::st_buffer(., 0) %>%
+        sf::as_Spatial(.) %>%
+        raster::aggregate(.)
+    } else if (grepl("NT|NU", P(sim)$studyAreaName)) {
+      ## NOTE: run NT and NU together!
+      message("NWT and NU will both be run together as a single study area.")
+      sim$studyArea <- mod$WBstudyArea[mod$WBstudyArea$NAME_1 %in% c("Northwest Territories", "Nunavut"), ]
+    } else {
+      sim$studyArea <- mod$WBstudyArea[mod$WBstudyArea$NAME_1 == mod$studyAreaNameLong, ]
+    }
+
+    sim$studyArea <- spTransform(sim$studyArea, mod$targetCRS)
+  }
+
+  if (!suppliedElsewhere("studyAreaReporting", sim)) {
+    sim$studyAreaReporting <- sim$studyArea
+  }
+
+  if (!suppliedElsewhere("studyArea", sim)) {
+    ## NOTE: studyArea and studyAreaLarge are the same [buffered] area
+    sim$studyArea <- buffer(sim$studyArea, P(sim)$bufferDist)
+  }
+
+  if (!suppliedElsewhere("studyAreaLarge", sim)) {
+    if (grepl("RIA", P(sim)$studyAreaName)) {
+      ## NOTE: RIA uses the same unbuffered studyArea for parameterization, sims, and reporting
+      sim$studyAreaLarge <- sim$studyArea
+    } else {
+      sim$studyAreaLarge <- sim$studyArea
+    }
+  }
 
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
