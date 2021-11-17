@@ -51,6 +51,12 @@ defineModule(sim, list(
                     paste("study area name for WB project - one of BC, AB, SK, YK, NWT, MB, or RIA"))
   ),
   inputObjects = bindrows(
+    expectsInput("rasterToMatch", objectClass = "RasterLayer",
+                 desc = "template raster", sourceURL = NA),
+    expectsInput("rasterToMatchLarge", objectClass = "RasterLayer",
+                 desc = "template raster for larger area", sourceURL = NA),
+    expectsInput("rasterToMatchReporting", objectClass = "RasterLayer",
+                 desc = "template raster for reporting area", sourceURL = NA),
     expectsInput("studyArea", objectClass = "SpatialPolygonsDataFrame",
                  desc = "study area used for simulation (buffered to mitigate edge effects)",
                  sourceURL = NA),
@@ -72,12 +78,6 @@ defineModule(sim, list(
                   desc = "list of a single raster stack - historical MDC calculated from ClimateNA data"),
     createsOutput("projectedClimateRasters", objectClass = "list",
                   desc = "list of a single raster stack - projected MDC calculated from ClimateNA data"),
-    createsOutput("rasterToMatch", objectClass = "RasterLayer",
-                  desc = "template raster"),
-    createsOutput("rasterToMatchLarge", objectClass = "RasterLayer",
-                  desc = "template raster for larger area"),
-    createsOutput("rasterToMatchReporting", objectClass = "RasterLayer",
-                  desc = "template raster for reporting area"),
     createsOutput("sppColorVect", objectClass = "character",
                   desc = "species colours for plotting"),
     createsOutput("sppEquiv", objectClass = "character",
@@ -185,20 +185,6 @@ Init <- function(sim) {
   }
 
   sim$studyArea$studyAreaName <- P(sim)$studyAreaName  # makes it a data.frame
-
-  sim$rasterToMatch <- Cache(LandR::prepInputsLCC,
-                             year = 2005,
-                             studyArea = sim$studyArea,
-                             destinationPath = dPath,
-                             useCache = P(sim)$.useCache,
-                             overwrite = TRUE,
-                             filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
-  #sim$rasterToMatch[] <- sim$rasterToMatch[] ## bring raster to memory
-  sim$rasterToMatchLarge <- sim$rasterToMatch
-
-  # This was raster::mask -- but that sometimes doesn't work because of incorrect dispatch that
-  #  conflicts with devtools::load_all("reproducible")
-  sim$rasterToMatchReporting <- Cache(maskInputs, sim$rasterToMatch, sim$studyAreaReporting)
 
   ## Paired handles 12 colours so it is safer compared to Accent's 8 max
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol,
@@ -494,6 +480,27 @@ Init <- function(sim) {
     } else {
       sim$studyAreaLarge <- sim$studyArea
     }
+  }
+
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    sim$rasterToMatch <- Cache(LandR::prepInputsLCC,
+                               year = 2005,
+                               studyArea = sim$studyArea,
+                               destinationPath = dPath,
+                               useCache = P(sim)$.useCache,
+                               overwrite = TRUE,
+                               filename2 = paste0(P(sim)$studyAreaName, "_rtm.tif"))
+    #sim$rasterToMatch[] <- sim$rasterToMatch[] ## bring raster to memory
+  }
+
+  if (!suppliedElsewhere("rasterToMatchLarge", sim)) {
+    sim$rasterToMatchLarge <- sim$rasterToMatch
+  }
+
+  if (!suppliedElsewhere("rasterToMatchReporting", sim)) {
+    # This was raster::mask -- but that sometimes doesn't work because of incorrect dispatch that
+    #  conflicts with devtools::load_all("reproducible")
+    sim$rasterToMatchReporting <- Cache(maskInputs, sim$rasterToMatch, sim$studyAreaReporting)
   }
 
   # ! ----- STOP EDITING ----- ! #
