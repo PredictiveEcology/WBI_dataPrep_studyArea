@@ -165,6 +165,17 @@ Init <- function(sim) {
   allowedStudyAreas <- c("AB", "BC", "MB", "NT", "NU", "SK", "YT", ## prov/terr x BCR intersections
                          "RIA") ## custom boundaries
 
+  ## TODO: why isn't this saved? cache issue with .inputObjects??
+  mod$studyAreaNameLong <- switch(P(sim)$studyAreaName,
+                                  AB = "Alberta",
+                                  BC = "british Columbia",
+                                  SK = "Saskatchewan",
+                                  MB = "Manitoba",
+                                  NT = "Northwest Territories & Nunavut",
+                                  NU = "Northwest Territories & Nunavut",
+                                  YT = "Yukon",
+                                  RIA = "RIA")
+
   if (grepl("RIA", P(sim)$studyAreaName)) {
     demUrl <- "https://drive.google.com/file/d/13sGg1X9DEOSkedg1m0PxcdJiuBESk072/"
   } else if (grepl("AB", P(sim)$studyAreaName)) {
