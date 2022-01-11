@@ -168,7 +168,7 @@ Init <- function(sim) {
   ## TODO: why isn't this saved? cache issue with .inputObjects??
   mod$studyAreaNameLong <- switch(P(sim)$studyAreaName,
                                   AB = "Alberta",
-                                  BC = "british Columbia",
+                                  BC = "British Columbia",
                                   SK = "Saskatchewan",
                                   MB = "Manitoba",
                                   NT = "Northwest Territories & Nunavut",
@@ -392,7 +392,7 @@ Init <- function(sim) {
 
   mod$studyAreaNameLong <- switch(P(sim)$studyAreaName,
                                   AB = "Alberta",
-                                  BC = "british Columbia",
+                                  BC = "British Columbia",
                                   SK = "Saskatchewan",
                                   MB = "Manitoba",
                                   NT = "Northwest Territories & Nunavut",
