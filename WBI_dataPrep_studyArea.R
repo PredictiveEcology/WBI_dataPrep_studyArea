@@ -220,9 +220,11 @@ Init <- function(sim) {
     archive::archive_extract(historicalClimateArchive, historicalClimatePath)
   }
 
-  historicalMDC <- Cache(
-    makeMDC,
-    inputPath = file.path(historicalClimatePath, mod$studyAreaNameLong),
+  ip <- file.path(historicalClimatePath, mod$studyAreaNameLong)
+  checkPath(ip, create = TRUE)
+
+  historicalMDC <- Cache(makeMDC,
+    inputPath = ip,
     years = P(sim)$historicalFireYears,
     quick = "inputPath"
   )
