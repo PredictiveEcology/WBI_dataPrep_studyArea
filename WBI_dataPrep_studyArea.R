@@ -19,7 +19,7 @@ defineModule(sim, list(
   reqdPkgs = list("archive", "magrittr", "raster", "sf", "sp",
                   "PredictiveEcology/reproducible@development (>= 1.2.6.9008)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
-                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/LandR@development)",
                   "PredictiveEcology/climateData@development (>= 0.0.0.0.9002)"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
@@ -220,11 +220,8 @@ Init <- function(sim) {
     archive::archive_extract(historicalClimateArchive, historicalClimatePath)
   }
 
-  ip <- file.path(historicalClimatePath, mod$studyAreaNameLong)
-  checkPath(ip, create = TRUE)
-
   historicalMDC <- Cache(makeMDC,
-    inputPath = ip,
+    inputPath = checkPath(file.path(historicalClimatePath, mod$studyAreaNameLong), create = TRUE),
     years = P(sim)$historicalFireYears,
     quick = "inputPath"
   )
