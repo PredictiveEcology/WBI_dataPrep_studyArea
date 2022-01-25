@@ -85,9 +85,9 @@ defineModule(sim, list(
     createsOutput("sppEquivCol", objectClass = "character",
                   desc = "name of column to use in sppEquiv"),
     createsOutput("studyAreaPSP", objectClass = "SpatialPolygonsDataFrame",
-                 desc = paste("this area will be used to subset PSP plots before building the statistical model.",
-                              "Currently PSP datasets with repeat measures exist only for Saskatchewan,",
-                              "Alberta, and Boreal British Columbia"))
+                  desc = paste("this area will be used to subset PSP plots before building the statistical model.",
+                               "Currently PSP datasets with repeat measures exist only for Saskatchewan,",
+                               "Alberta, and Boreal British Columbia"))
   )
 ))
 
@@ -220,23 +220,55 @@ Init <- function(sim) {
     archive::archive_extract(historicalClimateArchive, historicalClimatePath)
   }
 
+  # all downstream stuff from this one archive file should have same Cache assessment
+  #   do it once here and pass to each subsequent through .cacheExtra
+  digestFiles <- digest::digest(file = historicalClimateArchive, algo = "xxhash64")
+  digestYears <- CacheDigest(list(P(sim)$historicalFireYears))$outputHash
+  digestSA_RTM <- CacheDigest(list(sim$studyArea,
+                                   sim$rasterToMatch))$outputHash
   historicalMDC <- Cache(makeMDC,
-    inputPath = checkPath(file.path(historicalClimatePath, mod$studyAreaNameLong), create = TRUE),
-    years = P(sim)$historicalFireYears,
-    quick = "inputPath"
+                         inputPath = checkPath(file.path(historicalClimatePath, mod$studyAreaNameLong), create = TRUE),
+                         years = P(sim)$historicalFireYears,
+                         # quick = "inputPath",
+                         .cacheExtra = c(digestFiles, digestSA_RTM, digestYears),
+                         omitArgs = c("years", "inputPath")
   )
-  historicalMDC <- Cache(
-    postProcess,
-    historicalMDC,
-    rasterToMatch = sim$rasterToMatch,
-    studyArea = sim$studyArea,
-    datatype = "INT2U",
-    method = "bilinear",
-    filename2 = historicalMDCfile,
-    useCache = P(sim)$.useCache,
-    quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
-    userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags)
-  )
+
+  # There is an unreliable unknown in reproducible::postProcess when it is a RasterStack
+  #  this is a custom work around
+  postProcessStack <- function(MDC, studyArea, rasterToMatch, filename2) {
+    x1 <- terra::rast(MDC)
+    saVect <- terra::vect(sim$studyArea)
+    x2 <- terra::crop(x1, terra::project(saVect, terra::crs(x1)))
+    x3 <- terra::project(x2, terra::rast(sim$rasterToMatch), method = "bilinear")
+    x4 <- terra::mask(x3, saVect)
+    x5 <- terra::setMinMax(x4)
+    # convert to RasterStack prior to writing to disk because setMinMax didn't work with terra
+    x6 <- raster::stack(x5)
+    x7 <- raster::writeRaster(x6, filename = filename2, overwrite = TRUE,
+                              datatype = "INT2U")
+    raster::stack(x7)
+  }
+  historicalMDC <- Cache(postProcessStack,
+                         historicalMDC,
+                         sim$studyArea,
+                         sim$rasterToMatch,
+                         filename2 = historicalMDCfile,
+                         quick = "filename2",
+                         omitArgs = c("MDC", "studyArea", "rasterToMatch"),
+                         .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
+  # historicalMDC <- Cache(
+  #   postProcess,
+  #   historicalMDC,
+  #   rasterToMatch = sim$rasterToMatch,
+  #   studyArea = sim$studyArea,
+  #   datatype = "INT2U",
+  #   method = "bilinear",
+  #   filename2 = historicalMDCfile,
+  #   useCache = P(sim)$.useCache,
+  #   quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
+  #   userTags = c(paste0("histMDC_", P(sim)$studyAreaName), cacheTags)
+  # )
 
   ## The names need "year" at the start, because not every year will have fires (data issue in RIA),
   ## so fireSense matches fires + climate rasters by year.
@@ -265,27 +297,41 @@ Init <- function(sim) {
     googledrive::drive_download(file = as_id(projectedClimateUrl), path = projectedClimateArchive)
     archive::archive_extract(projectedClimateArchive, projectedClimatePath)
   }
+  digestFiles <- digest::digest(file = projectedClimateArchive, algo = "xxhash64")
+  digestYears <- CacheDigest(list(P(sim)$projectedFireYears))$outputHash
 
   projectedMDC <- Cache(
     makeMDC,
     inputPath = file.path(projectedClimatePath, mod$studyAreaNameLong),
     years = P(sim)$projectedFireYears,
-    quick = "inputPath"
+    # quick = "inputPath",
+    .cacheExtra = c(digestFiles, digestSA_RTM, digestYears), # digestYears is studyArea & rasterToMatch
+    omitArgs = c("years", "inputPath")
   )
-  projectedMDC <- Cache(
-    postProcess,
-    projectedMDC,
-    rasterToMatch = sim$rasterToMatch,
-    studyArea = sim$studyArea,
-    datatype = "INT2U",
-    method = "bilinear",
-    filename2 = projectedMDCfile,
-    useCache = P(sim)$.useCache,
-    quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
-    userTags = c(paste0("projMDC_", P(sim)$studyAreaName),
-                 paste0("projMDC_", P(sim)$climateGCM),
-                 paste0("projMDC_SSP", P(sim)$climateSSP), cacheTags)
-  )
+
+  projectedMDC <- Cache(postProcessStack,
+                        projectedMDC,
+                        sim$studyArea,
+                        sim$rasterToMatch,
+                        filename2 = projectedMDCfile,
+                        quick = "filename2",
+                        omitArgs = c("MDC", "studyArea", "rasterToMatch"),
+                        .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
+
+  # projectedMDC <- Cache(
+  #   postProcess,
+  #   projectedMDC,
+  #   rasterToMatch = sim$rasterToMatch,
+  #   studyArea = sim$studyArea,
+  #   datatype = "INT2U",
+  #   method = "bilinear",
+  #   filename2 = projectedMDCfile,
+  #   useCache = P(sim)$.useCache,
+  #   quick = "filename2", # Cache treats filenames as files; so it digests the file as an input
+  #   userTags = c(paste0("projMDC_", P(sim)$studyAreaName),
+  #                paste0("projMDC_", P(sim)$climateGCM),
+  #                paste0("projMDC_SSP", P(sim)$climateSSP), cacheTags)
+  # )
 
   ## WARNING: names(projectedMDC) <- paste0('year', P(sim)$projectedFireYears) # Bad
   ##          |-> allows for index mismatching
