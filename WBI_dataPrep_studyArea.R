@@ -235,7 +235,7 @@ Init <- function(sim) {
   )
 
 
-  historicalMDC2 <- Cache(postProcessTerra,
+  historicalMDC <- Cache(postProcessTerra,
                          from = historicalMDC,
                          to = sim$rasterToMatch,
                          maskTo = sim$studyArea,
@@ -244,7 +244,6 @@ Init <- function(sim) {
                          datatype = "INT2U",
                          omitArgs = c("from", "to", "maskTo"),
                          .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
-  browser()
   # historicalMDC <- Cache(
   #   postProcess,
   #   historicalMDC,
@@ -298,13 +297,23 @@ Init <- function(sim) {
   )
 
   projectedMDC <- Cache(postProcessTerra,
-                        projectedMDC,
-                        sim$studyArea,
-                        sim$rasterToMatch,
-                        filename2 = projectedMDCfile,
-                        quick = "filename2",
-                        omitArgs = c("from", "studyArea", "rasterToMatch"),
-                        .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
+                          from = projectedMDC,
+                          to = sim$rasterToMatch,
+                          maskTo = sim$studyArea,
+                          writeTo = projectedMDCfile,
+                          quick = "writeTo",
+                          datatype = "INT2U",
+                          omitArgs = c("from", "to", "maskTo"),
+                          .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
+
+  # projectedMDC <- Cache(postProcessTerra,
+  #                       projectedMDC,
+  #                       sim$studyArea,
+  #                       sim$rasterToMatch,
+  #                       filename2 = projectedMDCfile,
+  #                       quick = "filename2",
+  #                       omitArgs = c("from", "studyArea", "rasterToMatch"),
+  #                       .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
 
   # projectedMDC <- Cache(
   #   postProcess,
