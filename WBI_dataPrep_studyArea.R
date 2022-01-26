@@ -17,7 +17,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "WBI_dataPrep_studyArea.Rmd")),
   reqdPkgs = list("archive", "magrittr", "raster", "sf", "sp",
-                  "PredictiveEcology/reproducible@development (>= 1.2.6.9008)",
+                  "PredictiveEcology/reproducible@development (>= 1.2.8)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
                   "PredictiveEcology/LandR@development)",
                   "PredictiveEcology/climateData@development (>= 0.0.0.0.9002)"),
@@ -234,29 +234,17 @@ Init <- function(sim) {
                          omitArgs = c("years", "inputPath")
   )
 
-  # There is an unreliable unknown in reproducible::postProcess when it is a RasterStack
-  #  this is a custom work around
-  postProcessStack <- function(MDC, studyArea, rasterToMatch, filename2) {
-    x1 <- terra::rast(MDC)
-    saVect <- terra::vect(sim$studyArea)
-    x2 <- terra::crop(x1, terra::project(saVect, terra::crs(x1)))
-    x3 <- terra::project(x2, terra::rast(sim$rasterToMatch), method = "bilinear")
-    x4 <- terra::mask(x3, saVect)
-    x5 <- terra::setMinMax(x4)
-    # convert to RasterStack prior to writing to disk because setMinMax didn't work with terra
-    x6 <- raster::stack(x5)
-    x7 <- raster::writeRaster(x6, filename = filename2, overwrite = TRUE,
-                              datatype = "INT2U")
-    raster::stack(x7)
-  }
-  historicalMDC <- Cache(postProcessStack,
-                         historicalMDC,
-                         sim$studyArea,
-                         sim$rasterToMatch,
-                         filename2 = historicalMDCfile,
-                         quick = "filename2",
-                         omitArgs = c("MDC", "studyArea", "rasterToMatch"),
+
+  historicalMDC2 <- Cache(postProcessTerra,
+                         from = historicalMDC,
+                         to = sim$rasterToMatch,
+                         maskTo = sim$studyArea,
+                         writeTo = historicalMDCfile,
+                         quick = "writeTo",
+                         datatype = "INT2U",
+                         omitArgs = c("from", "to", "maskTo"),
                          .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
+  browser()
   # historicalMDC <- Cache(
   #   postProcess,
   #   historicalMDC,
@@ -309,13 +297,13 @@ Init <- function(sim) {
     omitArgs = c("years", "inputPath")
   )
 
-  projectedMDC <- Cache(postProcessStack,
+  projectedMDC <- Cache(postProcessTerra,
                         projectedMDC,
                         sim$studyArea,
                         sim$rasterToMatch,
                         filename2 = projectedMDCfile,
                         quick = "filename2",
-                        omitArgs = c("MDC", "studyArea", "rasterToMatch"),
+                        omitArgs = c("from", "studyArea", "rasterToMatch"),
                         .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
 
   # projectedMDC <- Cache(
@@ -564,3 +552,104 @@ Init <- function(sim) {
 }
 
 ### add additional events as needed by copy/pasting from above
+
+# There is an unreliable unknown in reproducible::postProcess when it is a RasterStack
+#  this is a custom work around
+#' @param from A RasterLayer, RasterStack, RasterBrick, SpatRaster to do one or more of:
+#'   crop, project, mask, and write
+#' @param to A \code{Raster*} or \code{SpatRaster} class object which is the object
+#'   whose metadata will be the target for cropping, projecting, and masking of \code{from}.
+#' @param cropTo Optional \code{Spatial*}, \code{Raster*}, \code{sf} or \code{Spat*} which,
+#'   if supplied, will supply the extent with which to crop \code{from}. To omit
+#'   cropping completed, set this to \code{NULL}. If supplied, this will be used instead of \code{to}
+#'   for the cropping step. Defaults to \code{to}
+#' @param projectTo Optional \code{Raster*} or \code{SpatRaster} which,
+#'   if supplied, will supply the \code{crs}, \code{extent}, \code{res}, and \code{origin}
+#'   to project the \code{from} to. To omit projecting, set this to NULL.
+#'   If supplied, this will be used instead of \code{to}
+#'   for the projecting step. Defaults to \code{to}.
+#' @param maskTo Optional \code{Spatial*}, \code{Raster*}, \code{sf} or \code{Spat*} which,
+#'   if supplied, will supply the extent with which to mask \code{from}. To omit
+#'   masking completed, set this to \code{NULL}. If supplied, this will be used instead of \code{to}
+#'   for the masking step. Defaults to \code{to}
+postProcessTerra <- function(from, to, cropTo = to, projectTo = to, maskTo = to,
+                             writeTo = NULL, method = "bilinear", datatype = "FLT4S",
+                             overwrite = TRUE) {
+
+  # Assertions
+  if (!(is(from, "Raster") || is(from, "SpatRaster"))) stop("from must be a Raster* or SpatRaster")
+  if (!(is(to, "Raster") || is(to, "SpatRaster")
+      || is(to, "Spatial") || is(to, "sf"))) stop("to must be a Raster*, Spat*, sf or Spatial object")
+  if (!(is(cropTo, "Raster") || is(cropTo, "SpatRaster")
+      || is(cropTo, "Spatial") || is(cropTo, "sf"))) stop("cropTo must be a Raster*, Spat*, sf or Spatial object")
+  if (!(is(maskTo, "Raster") || is(maskTo, "SpatRaster")
+      || is(maskTo, "Spatial") || is(maskTo, "sf"))) stop("maskTo must be a Raster*, Spat*, sf or Spatial object")
+  if (!(is(projectTo, "Raster") || is(projectTo, "SpatRaster"))) stop("projectTo must be a Raster* or SpatRaster")
+
+  message("Using terra and sf to postProcess")
+  if (missing(to)) {
+    if (missing(cropTo)) cropTo <- NULL
+    if (missing(maskTo)) maskTo <- NULL
+    if (missing(projectTo)) projectTo <- NULL
+  }
+
+  isRaster <- is(from, "Raster")
+  isStack <- is(from, "RasterStack")
+  isBrick <- is(from, "RasterBrick")
+  if (isRaster) {
+    from <- terra::rast(from)
+  }
+  if (!is.null(cropTo)) {
+    ext <- st_as_sfc(st_bbox(cropTo)) # create extent as an object; keeps crs correctly
+    # ext <- terra::vect(ext)
+    if (!sf::st_crs(from) == sf::st_crs(ext)) { # This is sf way of comparing CRS -- raster::compareCRS doesn't work for newer CRS
+      ext <- sf::st_transform(ext, st_crs(from))
+    }
+    message("  cropping...")
+    from <- terra::crop(from, ext)
+    message("       done!")
+  }
+
+  projectToIsMaskTo <- identical(projectTo, maskTo)
+  if (!is.null(projectTo)) {
+    if (is(projectTo, "SpatVector") || is(projectTo, "sf") || is(projectTo, "SpatialPolygons")) {
+      stop("projectTo must be a Raster or SpatRast object")
+    }
+    if (is(projectTo, "Raster"))
+      projectTo <- terra::rast(projectTo)
+
+    message("  projecting...")
+    st <- Sys.time()
+    from <- terra::project(from, projectTo, method = method)
+    message("       done in ", format(difftime(Sys.time(), st), units = "secs", digits = 3))
+  }
+  if (!is.null(maskTo)) {
+    if (projectToIsMaskTo)
+      maskTo <- projectTo
+    else
+      if (is(maskTo, "Raster"))
+        maskTo <- terra::rast(maskTo)
+    if (is(maskTo, "Spatial"))
+      maskTo <- sf::st_as_sf(maskTo)
+    if (is(maskTo, "sf"))
+      maskTo <- terra::vect(maskTo)
+
+    if (!sf::st_crs(from) == sf::st_crs(maskTo))
+      maskTo <- terra::project(maskTo, from)
+    message("  masking...")
+    st <- Sys.time()
+    from <- terra::mask(from, maskTo)
+    message("       done in ", format(difftime(Sys.time(), st), units = "secs", digits = 3))
+  }
+
+  from <- terra::setMinMax(from)
+  # convert to RasterStack prior to writing to disk because setMinMax didn't work with terra
+  if (isStack) from <- raster::stack(from)
+  if (isBrick) from <- raster::brick(from)
+
+  if (!is.null(writeTo))
+    from <- raster::writeRaster(from, filename = writeTo, overwrite = overwrite,
+                               datatype = datatype)
+  if (isStack && !is(from, "RasterStack")) from <- raster::stack(from) # coming out of writeRaster, becomes brick
+  from
+}
