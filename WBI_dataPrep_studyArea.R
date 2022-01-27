@@ -212,7 +212,7 @@ Init <- function(sim) {
   ## HISTORIC CLIMATE DATA
   historicalClimatePath <- checkPath(file.path(dPath, "climate", "historic"), create = TRUE)
   historicalClimateArchive <- file.path(historicalClimatePath, paste0(mod$studyAreaNameLong, ".zip"))
-  historicalMDCfile <- file.path(historicalClimatePath, paste0("MDC_historical_", studyAreaName, ".grd"))
+  historicalMDCfile <- file.path(historicalClimatePath, paste0("MDC_historical_", studyAreaName, ".tif"))
 
   ## need to download and extract w/o prepInputs to preserve folder structure!
   if (!file.exists(historicalClimateArchive)) {
@@ -235,7 +235,7 @@ Init <- function(sim) {
   )
 
   historicalMDC <- Cache(postProcessTerra,
-                         from = historicalMDC,
+                         from = terra::rast(historicalMDC),
                          to = sim$rasterToMatch,
                          # to = sim$studyArea,
                          #projectTo = sim$studyArea,
@@ -245,6 +245,8 @@ Init <- function(sim) {
                          datatype = "INT2U",
                          omitArgs = c("from", "to", "maskTo"),
                          .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
+  historicalMDC <- raster::stack(historicalMDC) # fast
+
   # historicalMDC <- Cache(
   #   postProcess,
   #   historicalMDC,
@@ -278,7 +280,7 @@ Init <- function(sim) {
                                               P(sim)$climateSSP, ".zip"))
   projectedMDCfile <- file.path(dirname(projectedClimatePath),
                                 paste0("MDC_future_", P(sim)$climateGCM,
-                                       "_ssp", P(sim)$climateSSP, "_", studyAreaName, ".grd"))
+                                       "_ssp", P(sim)$climateSSP, "_", studyAreaName, ".tif"))
 
   ## need to download and extract w/o prepInputs to preserve folder structure!
   if (!file.exists(projectedClimateArchive)) {
@@ -298,7 +300,7 @@ Init <- function(sim) {
   )
 
   projectedMDC <- Cache(postProcessTerra,
-                        from = projectedMDC,
+                        from = terra::rast(projectedMDC),
                         to = sim$rasterToMatch,
                         maskTo = sim$studyArea,
                         writeTo = projectedMDCfile,
@@ -306,6 +308,8 @@ Init <- function(sim) {
                         datatype = "INT2U",
                         omitArgs = c("from", "to", "maskTo"),
                         .cacheExtra = c(digestFiles, digestSA_RTM, digestYears))
+  projectedMDC <- raster::stack(projectedMDC) # fast
+
 
   # projectedMDC <- Cache(postProcessTerra,
   #                       projectedMDC,
@@ -376,6 +380,7 @@ Init <- function(sim) {
     archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
   }
 
+  browser()
   projCMIATA <- Cache(makeLandRCS_projectedCMIandATA,
                       normalMAT = normals[["MATnormal"]],
                       pathToFutureRasters = file.path(projAnnualClimatePath, mod$studyAreaNameLong),
