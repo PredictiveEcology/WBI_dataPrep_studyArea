@@ -380,7 +380,6 @@ Init <- function(sim) {
     archive::archive_extract(projAnnualClimateArchive, projAnnualClimatePath)
   }
 
-  browser()
   projCMIATA <- Cache(makeLandRCS_projectedCMIandATA,
                       normalMAT = normals[["MATnormal"]],
                       pathToFutureRasters = file.path(projAnnualClimatePath, mod$studyAreaNameLong),
