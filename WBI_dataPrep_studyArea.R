@@ -9,7 +9,7 @@ defineModule(sim, list(
   authors = c(
     person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = "aut"),
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "aut"),
-    person("Eliot", "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = "ctb"),
+    person("Eliot", "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = "ctb")
   ),
   childModules = character(0),
   version = list(WBI_dataPrep_studyArea = "0.1.0"),
