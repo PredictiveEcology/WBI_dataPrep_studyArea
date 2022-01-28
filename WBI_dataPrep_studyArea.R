@@ -20,7 +20,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@terraInProjectInputs (>= 1.2.8.9019)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
                   "PredictiveEcology/LandR@development",
-                  "PredictiveEcology/climateData@development (>= 0.0.0.9003)"),
+                  "PredictiveEcology/climateData@development (>= 0.0.0.9004)"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
