@@ -81,7 +81,7 @@ defineModule(sim, list(
                   desc = "list of a single raster stack - projected MDC calculated from ClimateNA data"),
     createsOutput("sppColorVect", objectClass = "character",
                   desc = "species colours for plotting"),
-    createsOutput("sppEquiv", objectClass = "character",
+    createsOutput("sppEquiv", objectClass = "data.table",
                   desc = "table of LandR species names equivalencies"),
     createsOutput("sppEquivCol", objectClass = "character",
                   desc = "name of column to use in sppEquiv"),
