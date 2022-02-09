@@ -18,7 +18,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = deparse(list("README.txt", "WBI_dataPrep_studyArea.Rmd")),
   reqdPkgs = list("archive", "magrittr", "raster", "sf", "sp",
-                  "PredictiveEcology/reproducible@terraInProjectInputs (>= 1.2.8.9032)",
+                  "PredictiveEcology/reproducible@terraInProjectInputs (>= 1.2.8.9033)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/climateData@development (>= 0.0.0.9004)"),
