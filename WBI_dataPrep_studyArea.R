@@ -21,7 +21,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@terraInProjectInputs (>= 1.2.8.9033)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
                   "PredictiveEcology/LandR@development",
-                  "PredictiveEcology/climateData@development (>= 0.0.0.9004)"),
+                  "PredictiveEcology/climateData@development (>= 0.0.0.9005)"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
@@ -385,7 +385,7 @@ Init <- function(sim) {
                       normalMAT = normals[["MATnormal"]],
                       pathToFutureRasters = file.path(projAnnualClimatePath, mod$studyAreaNameLong),
                       years = P(sim)$projectedFireYears,
-                      useCache = TRUE) ## TODO: this is very RAM heavy -- use GDAL?
+                      useCache = TRUE)
   sim$ATAstack <- projCMIATA[["projectedATA"]]
   sim$CMIstack <- projCMIATA[["projectedCMI"]]
 
