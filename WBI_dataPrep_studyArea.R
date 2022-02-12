@@ -389,6 +389,13 @@ Init <- function(sim) {
   sim$ATAstack <- projCMIATA[["projectedATA"]]
   sim$CMIstack <- projCMIATA[["projectedCMI"]]
 
+  ## TODO: lighten these are a heavy tests; only check a few of the layers for now
+  # yearsToCheck <- sample.int(nlayers(sim$ATAstack), 10)
+  # stopifnot(all(unlist(lapply(sim$ATAstack[[yearsToCheck]], function(x) all(!is.na(x[]))))))
+  #
+  # yearsToCheck <- sample.int(nlayers(sim$CMIstack), 10)
+  # stopifnot(all(unlist(lapply(sim$CMIstack[[yearsToCheck]], function(x) all(!is.na(x[]))))))
+
   ## only use ecozones in the WBI study area
   ecozonesToUse <- c(
     "Boreal Cordillera", "Boreal PLain", "Boreal Shield", "Hudson Plain",
