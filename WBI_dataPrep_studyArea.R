@@ -182,7 +182,7 @@ Init <- function(sim) {
   ecozones_SA <- ecozones_SA[ecozones_SA$ZONE_NAME %in% ecozonesToUse, ] ## remove boundary artifacts
 
   ## use ecozone boundaries within WBI study area for parameterizing PSP for current study area
-  sim$studyAreaPSP <- ecozones_WB[ecozones_WB$ZONE_NAME %in% ecozones_SA$ZONE_NAME, ] %>% as_Spatial()
+  sim$studyAreaPSP <- ecozones_WB[ecozones_WB$ZONE_NAME %in% ecozones_SA$ZONE_NAME, ] %>% sf::as_Spatial()
 
   return(invisible(sim))
 }
