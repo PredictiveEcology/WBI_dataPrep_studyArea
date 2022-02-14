@@ -101,16 +101,6 @@ Init <- function(sim) {
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
-  if (!P(sim)$climateGCM %in% c("13GCMs_ensemble", "CanESM5", "CNRM-ESM2-1", "CCSM4")) {
-    stop("Invalid climate model specified.\n",
-         "climateGCM should be one of '13GCMs_ensemble', 'CanESM5', 'CNRM-ESM2-1', or 'CCSM4'.")
-  }
-
-  if (!P(sim)$climateSSP %in% c(45, 85, 245, 370, 585)) {
-    stop("Invalid SSP scenario for climate model ", P(sim)$climateGCM, ".\n",
-         "climateSSP should be one of '245', '370', or '585' (or one of RCP '45' and '85').")
-  }
-
   ## all species considered in western boreal (will be subset later)
   data("sppEquivalencies_CA", package = "LandR", envir = environment())
   allWBIspp <- c("Abie_Bal", "Abie_Las", "Betu_Pap", "Lari_Lar",
@@ -132,14 +122,6 @@ Init <- function(sim) {
   sim$sppEquivCol <- "LandR"
   rm(sppEquivalencies_CA)
 
-  ## lookup table to get climate urls  based on studyArea, GCM, and SSP
-  dt <- data.table::fread(file = file.path(dataPath(sim), "climateDataURLs.csv"))
-  historicalClimateURL <- dt[studyArea == studyAreaName & type == "hist_monthly", GID]
-  projectedClimateUrl <- dt[studyArea == studyAreaName &
-                              GCM == P(sim)$climateGCM &
-                              SSP == P(sim)$climateSSP &
-                              type == "proj_monthly", GID]
-
   ## studyArea-specific shapefiles and rasters
   allowedStudyAreas <- c("AB", "BC", "MB", "NT", "NU", "SK", "YT", ## prov/terr x BCR intersections
                          "RIA") ## custom boundaries
@@ -154,25 +136,6 @@ Init <- function(sim) {
                                   NU = "Northwest Territories & Nunavut",
                                   YT = "Yukon",
                                   RIA = "RIA")
-
-  if (grepl("RIA", P(sim)$studyAreaName)) {
-    demUrl <- "https://drive.google.com/file/d/13sGg1X9DEOSkedg1m0PxcdJiuBESk072/"
-  } else if (grepl("AB", P(sim)$studyAreaName)) {
-    demUrl <- "https://drive.google.com/file/d/1g1SEU65zje6686pQXQzVVQQc44IXaznr/"
-  } else if (grepl("BC", P(sim)$studyAreaName)) {
-    demUrl <- "https://drive.google.com/file/d/1DaAYFr0z38qmbZcz452QPMP_fzwUIqLD/"
-  } else if (grepl("MB", P(sim)$studyAreaName)) {
-    demUrl <- "https://drive.google.com/file/d/1X7b2CE6QyCvik3UG9pUj6zc4b5UYZi8w/"
-  } else if (grepl("NT|NU", P(sim)$studyAreaName)) {
-    ## NOTE: run NT and NU together!
-    demUrl <- "https://drive.google.com/file/d/13n8LjQJihy9kd3SniS91EuXunowbWOBa/"
-  } else if (grepl("SK", P(sim)$studyAreaName)) {
-    demUrl <- "https://drive.google.com/file/d/1CooPdqc3SlVVU7y_BaPfZD0OXt42fjBC/"
-  } else if (grepl("YT", P(sim)$studyAreaName)) {
-    demUrl <- "https://drive.google.com/file/d/1CUMjLFGdGtwaQlErQ0Oq89ICUCcX641Q/"
-  } else {
-    stop("studyAreaName must be one of: ", paste(allowedStudyAreas, collapse = ", "))
-  }
 
   sim$studyArea$studyAreaName <- P(sim)$studyAreaName  # makes it a data.frame
 
