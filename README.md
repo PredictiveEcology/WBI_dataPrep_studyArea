@@ -1,1 +1,1 @@
-WBI_dataPrep_studyArea
+WBI_dataPrep_studyArea.md
