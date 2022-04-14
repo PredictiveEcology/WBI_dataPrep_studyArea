@@ -101,9 +101,8 @@ Init <- function(sim) {
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
-  sim$sppEquiv <- makeSppEquivWBI(studyAreaName)
+  sim$sppEquiv <- makeSppEquivWBI(P(sim)$studyAreaName)
   sim$sppEquivCol <- "LandR"
-  rm(sppEquivalencies_CA)
 
   ## studyArea-specific shapefiles and rasters
   allowedStudyAreas <- c("AB", "BC", "MB", "NT", "NU", "SK", "YT", ## prov/terr x BCR intersections
