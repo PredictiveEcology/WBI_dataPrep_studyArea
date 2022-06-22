@@ -189,7 +189,8 @@ Init <- function(sim) {
   mod$targetCRS <- paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
                          "+x_0=0 +y_0=0 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
 
-  if (!suppliedElsewhere("studyArea", sim)) {
+  needStudyArea <- !suppliedElsewhere("studyArea", sim)
+  if (needStudyArea) {
     #### Prep study-area specific objects ####
     ## when adding study areas, add relevant climate urls, rtm and sa, and don't forget R script prepSppEquiv
 
@@ -265,7 +266,7 @@ Init <- function(sim) {
     sim$studyAreaReporting <- sim$studyArea
   }
 
-  if (!suppliedElsewhere("studyArea", sim)) {
+  if (needStudyArea) {
     ## NOTE: studyArea and studyAreaLarge are the same [buffered] area
     sim$studyArea <- buffer(sim$studyArea, P(sim)$bufferDist)
   }
