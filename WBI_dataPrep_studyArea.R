@@ -194,50 +194,9 @@ Init <- function(sim) {
     #### Prep study-area specific objects ####
     ## when adding study areas, add relevant climate urls, rtm and sa, and don't forget R script prepSppEquiv
 
-    provs <- c("British Columbia", "Alberta", "Saskatchewan", "Manitoba")
-    terrs <- c("Yukon", "Northwest Territories", "Nunavut")
-    WB <- c(provs, terrs)
-
-    bcrzip <- "https://www.birdscanada.org/download/gislab/bcr_terrestrial_shape.zip"
-
-    bcrshp <- Cache(prepInputs,
-                    url = bcrzip,
-                    destinationPath = dPath,
-                    targetCRS = mod$targetCRS,
-                    useCache = P(sim)$.useCache,
-                    fun = "sf::st_read")
-
-    if (packageVersion("reproducible") >= "1.2.5") {
-      fn1 <- function(x) {
-        x <- readRDS(x)
-        x <- st_as_sf(x)
-        st_transform(x, mod$targetCRS)
-      }
-    } else {
-      fn1 <- "readRDS"
-    }
-    canProvs <- Cache(prepInputs,
-                      "GADM",
-                      #fun = "base::readRDS",
-                      fun = fn1,
-                      dlFun = "raster::getData",
-                      country = "CAN", level = 1, path = dPath,
-                      #targetCRS = mod$targetCRS, ## TODO: fails on Windows
-                      targetFile = "gadm36_CAN_1_sp.rds", ## TODO: this will change as GADM data update
-                      destinationPath = dPath,
-                      useCache = P(sim)$.useCache) #%>%
-    if (packageVersion("reproducible") < "1.2.5") {
-      canProvs <- st_as_sf(canProvs) %>%
-        st_transform(., mod$targetCRS)
-    }
-
-    bcrWB <- bcrshp[bcrshp$BCR %in% c(4, 6:8), ]
-    provsWB <- canProvs[canProvs$NAME_1 %in% WB, ]
-
-    mod$WBstudyArea <- Cache(postProcess, provsWB, studyArea = bcrWB, useSAcrs = TRUE,
-                             useCache = P(sim)$.useCache,
-                             filename2 = NULL, overwrite = TRUE) %>%
-      as_Spatial(.)
+    mod$WBstudyArea <- makeWBIstudyArea(destinationPath = dPath,
+                                        targetCRS = mod$targetCRS,
+                                        useCache = P(sim)$.useCache)
 
     if (grepl("RIA", P(sim)$studyAreaName)) {
       studyAreaUrl <- "https://drive.google.com/file/d/1LxacDOobTrRUppamkGgVAUFIxNT4iiHU/"
