@@ -101,7 +101,7 @@ Init <- function(sim) {
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(P(sim)$studyAreaName, currentModule(sim))
 
-  sim$sppEquiv <- makeSppEquivWBI(studyAreaName)
+  sim$sppEquiv <- makeSppEquivWBI(P(sim)$studyAreaName)
   sim$sppEquivCol <- "LandR"
   rm(sppEquivalencies_CA)
 
@@ -123,8 +123,13 @@ Init <- function(sim) {
   sim$studyArea$studyAreaName <- P(sim)$studyAreaName  # makes it a data.frame
 
   ## Paired handles 12 colours so it is safer compared to Accent's 8 max
+  browser()
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol,
                                        palette = "Paired")
+
+  # the object is a parameter every other module. It must be the same or things don't work.
+  sim@params$.globals$sppEquivCol <- sim$sppEquivCol
+  sim <- updateParamsFromGlobals(sim)
 
   stopifnot(getOption("reproducible.useNewDigestAlgorithm") == 2)
 
