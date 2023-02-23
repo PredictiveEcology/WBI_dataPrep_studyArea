@@ -123,7 +123,6 @@ Init <- function(sim) {
   sim$studyArea$studyAreaName <- P(sim)$studyAreaName  # makes it a data.frame
 
   ## Paired handles 12 colours so it is safer compared to Accent's 8 max
-  browser()
   sim$sppColorVect <- LandR::sppColors(sppEquiv = sim$sppEquiv, sppEquivCol = sim$sppEquivCol,
                                        palette = "Paired")
 
