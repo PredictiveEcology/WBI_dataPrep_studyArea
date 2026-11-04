@@ -16,7 +16,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = deparse(list("README.md", "WBI_dataPrep_studyArea.Rmd")),
-  reqdPkgs = list("magrittr", "raster", "sf", "sp",
+  reqdPkgs = list("googledrive", "magrittr", "raster", "sf", "sp",
                   "PredictiveEcology/reproducible@development (>= 1.2.8.9044)",
                   "PredictiveEcology/fireSenseUtils@development (>= 0.0.4.9014)",
                   "PredictiveEcology/LandR@development"),
