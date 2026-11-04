@@ -28,7 +28,7 @@ For help writing in R Markdown, see https://rmarkdown.rstudio.com/.
 # Usage
 
 
-```r
+``` r
 library(SpaDES.core)
 ```
 
@@ -58,7 +58,7 @@ library(SpaDES.core)
 ```
 
 
-```r
+``` r
 setPaths(modulePath = file.path('../'),
          inputPath = "data")
 paths <- getPaths() # shows where the 4 relevant paths are
@@ -89,19 +89,15 @@ mySimOut <- spades(mySim)
 Provide a summary of user-visible parameters.
 
 
-|paramName           |paramClass |default      |min |max |paramDesc                                                                                                                                                |
-|:-------------------|:----------|:------------|:---|:---|:--------------------------------------------------------------------------------------------------------------------------------------------------------|
-|.plotInitialTime    |numeric    |NA           |NA  |NA  |Describes the simulation time at which the first plot event should occur.                                                                                |
-|.plotInterval       |numeric    |NA           |NA  |NA  |Describes the simulation time interval between plot events.                                                                                              |
-|.saveInitialTime    |numeric    |NA           |NA  |NA  |Describes the simulation time at which the first save event should occur.                                                                                |
-|.saveInterval       |numeric    |NA           |NA  |NA  |This describes the simulation time interval between save events.                                                                                         |
-|.useCache           |logical    |FALSE        |NA  |NA  |Should this entire module be run with caching activated? This is generally intended for data-type modules, where stochasticity and time are not relevant |
-|bufferDist          |numeric    |20000        |NA  |NA  |Distance (m) to buffer studyArea and rasterToMatch when creating 'Large' versions.                                                                       |
-|climateGCM          |character  |CNRM-ESM2-1  |NA  |NA  |Global Circulation Model to use for climate projections: currently '13GCMs_ensemble', 'CanESM5', 'CNRM-ESM2-1', or 'CCSM4'.                              |
-|climateSSP          |numeric    |370          |NA  |NA  |SSP emissions scenario for `climateGCM`: one of 245, 370, or 585.[If using 'climateGCM = CCSM4', climateSSP must be one of 45 or 85.]                    |
-|historicalFireYears |numeric    |1991, 19.... |NA  |NA  |range of years captured by the historical climate data                                                                                                   |
-|projectedFireYears  |numeric    |2011, 20.... |NA  |NA  |range of years captured by the projected climate data                                                                                                    |
-|studyAreaName       |character  |RIA          |NA  |NA  |study area name for WB project - one of BC, AB, SK, YK, NWT, MB, or RIA                                                                                  |
+|paramName        |paramClass |default |min |max |paramDesc                                                                                                                                                |cacheKey |
+|:----------------|:----------|:-------|:---|:---|:--------------------------------------------------------------------------------------------------------------------------------------------------------|:--------|
+|.plotInitialTime |numeric    |NA      |NA  |NA  |Describes the simulation time at which the first plot event should occur.                                                                                |TRUE     |
+|.plotInterval    |numeric    |NA      |NA  |NA  |Describes the simulation time interval between plot events.                                                                                              |TRUE     |
+|.saveInitialTime |numeric    |NA      |NA  |NA  |Describes the simulation time at which the first save event should occur.                                                                                |TRUE     |
+|.saveInterval    |numeric    |NA      |NA  |NA  |This describes the simulation time interval between save events.                                                                                         |TRUE     |
+|.useCache        |logical    |FALSE   |NA  |NA  |Should this entire module be run with caching activated? This is generally intended for data-type modules, where stochasticity and time are not relevant |TRUE     |
+|bufferDist       |numeric    |20000   |NA  |NA  |Distance (m) to buffer studyArea and rasterToMatch when creating 'Large' versions.                                                                       |TRUE     |
+|studyAreaName    |character  |RIA     |NA  |NA  |One of 'AB', 'BC', 'MB', 'NT', 'SK', 'YT', or 'RIA'.                                                                                                     |TRUE     |
 
 # Events
 
@@ -123,8 +119,14 @@ How to obtain input data, and a description of the data required by the module.
 If `sourceURL` is specified, `downloadData("WBI_dataPrep_studyArea", "..")` may be sufficient.
 
 
-|desc |
-|:----|
+|objectName             |objectClass              |desc                                                               |sourceURL |
+|:----------------------|:------------------------|:------------------------------------------------------------------|:---------|
+|rasterToMatch          |RasterLayer              |template raster                                                    |NA        |
+|rasterToMatchLarge     |RasterLayer              |template raster for larger area                                    |NA        |
+|rasterToMatchReporting |RasterLayer              |template raster for reporting area                                 |NA        |
+|studyArea              |SpatialPolygonsDataFrame |study area used for simulation (buffered to mitigate edge effects) |NA        |
+|studyAreaLarge         |SpatialPolygonsDataFrame |study area used for module parameterization (buffered)             |NA        |
+|studyAreaReporting     |SpatialPolygonsDataFrame |study area used for reporting/post-processing                      |NA        |
 
 ## Output data
 
